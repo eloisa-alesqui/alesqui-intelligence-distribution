@@ -98,7 +98,7 @@ code .env
 MONGODB_ROOT_PASSWORD=your_secure_password_here
 
 # 2. Update MongoDB URI with your password
-MONGODB_URI=mongodb://admin:your_secure_password_here@mongodb:27017/postmangpt?authSource=admin
+MONGODB_URI=mongodb://admin:your_secure_password_here@mongodb:27017/alesqui_intelligence?authSource=admin
 
 # 3. Set a secure JWT secret
 JWT_SECRET=your_generated_jwt_secret_here
@@ -129,8 +129,8 @@ You have two options for MongoDB:
 # Keep these lines uncommented
 MONGODB_ROOT_USER=admin
 MONGODB_ROOT_PASSWORD=your_secure_password
-MONGODB_DATABASE=postmangpt
-MONGODB_URI=mongodb://admin:your_secure_password@mongodb:27017/postmangpt?authSource=admin
+MONGODB_DATABASE=alesqui_intelligence
+MONGODB_URI=mongodb://admin:your_secure_password@mongodb:27017/alesqui_intelligence?authSource=admin
 ```
 
 **Start command:**
@@ -173,17 +173,17 @@ docker-compose --profile local-db up -d
    - Choose "Connect your application"
    - Copy the connection string
    - Replace `<password>` with your database user password
-   - Replace `<database>` with `postmangpt`
+   - Replace `<database>` with `alesqui_intelligence`
 
 5. **Update `.env` file:**
    ```bash
    # Comment out local MongoDB variables
    # MONGODB_ROOT_USER=admin
    # MONGODB_ROOT_PASSWORD=...
-   # MONGODB_DATABASE=postmangpt
+   # MONGODB_DATABASE=alesqui_intelligence
    
    # Use Atlas connection string
-   MONGODB_URI=mongodb+srv://alesqui:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/postmangpt?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://alesqui:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/alesqui_intelligence?retryWrites=true&w=majority
    ```
 
 6. **Start command:**
@@ -203,7 +203,7 @@ docker-compose --profile local-db up -d
 | `MONGODB_URI` | **Yes** | - | MongoDB connection string |
 | `MONGODB_ROOT_USER` | Local only | `admin` | MongoDB root username |
 | `MONGODB_ROOT_PASSWORD` | Local only | - | MongoDB root password |
-| `MONGODB_DATABASE` | No | `postmangpt` | Database name |
+| `MONGODB_DATABASE` | No | `alesqui_intelligence` | Database name |
 | `JWT_SECRET` | **Yes** | - | Secret for JWT tokens (min 32 chars) |
 | `JWT_EXPIRATION` | No | `900000` | Access token expiration (15 min) |
 | `JWT_REFRESH_EXPIRATION` | No | `604800000` | Refresh token expiration (7 days) |

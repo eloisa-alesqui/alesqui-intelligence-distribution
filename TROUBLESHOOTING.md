@@ -277,7 +277,7 @@ Common issues and solutions for Alesqui Intelligence deployment.
 
 2. **Connect using correct credentials:**
    ```bash
-   mongosh "mongodb://admin:YOUR_PASSWORD@localhost:27017/postmangpt?authSource=admin"
+   mongosh "mongodb://admin:YOUR_PASSWORD@localhost:27017/alesqui_intelligence?authSource=admin"
    ```
 
 3. **Check if port is already in use:**
@@ -583,7 +583,7 @@ docker exec -it alesqui-mongodb mongosh -u admin -p YOUR_PASSWORD --authenticati
 docker exec alesqui-mongodb mongosh -u admin -p YOUR_PASSWORD --authenticationDatabase admin --eval "show dbs"
 
 # Check collections
-docker exec alesqui-mongodb mongosh -u admin -p YOUR_PASSWORD --authenticationDatabase admin postmangpt --eval "show collections"
+docker exec alesqui-mongodb mongosh -u admin -p YOUR_PASSWORD --authenticationDatabase admin alesqui_intelligence --eval "show collections"
 ```
 
 ### Generate Full Diagnostic Report
