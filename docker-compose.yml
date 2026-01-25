@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # MongoDB Database (Local Option)
+  # ========================================
+  mongodb:
+    image: mongo:7
+    container_name: alesqui-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-postmangpt}
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    ports:
+      - "27017:27017"
+    networks:
+      - alesqui-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - local-db
+
+  # ========================================
+  # Backend Service (Java Spring Boot)
+  # ========================================
+  backend:
+    image: ${BACKEND_IMAGE:-eloisa-alesqui/alesqui-intelligence-backend:latest}
+    container_name: alesqui-backend
+    restart: unless-stopped
+    environment:
+      # Server Configuration
+      PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      
+      # MongoDB Configuration
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-postmangpt}
+      
+      # Security & JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-900000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+      
+      # AI Configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # CORS Configuration
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      CORS_ADDITIONAL_ORIGINS: ${CORS_ADDITIONAL_ORIGINS:-}
+      
+      # Deployment Configuration
+      COMPANY_NAME: ${COMPANY_NAME:-Alesqui Intelligence}
+      
+      # Java Options
+      JAVA_OPTS: ${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - alesqui-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      mongodb:
+        condition: service_healthy
+        required: false
+
+  # ========================================
+  # Frontend Service (React + Nginx)
+  # ========================================
+  frontend:
+    image: ${FRONTEND_IMAGE:-eloisa-alesqui/alesqui-intelligence-frontend:latest}
+    container_name: alesqui-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - alesqui-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  alesqui-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
