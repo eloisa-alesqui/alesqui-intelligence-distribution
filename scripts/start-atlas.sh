@@ -32,8 +32,12 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+# Detect Docker Compose command (v1 or v2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
     echo "Please install Docker Compose first: https://docs.docker.com/compose/install/"
     exit 1
@@ -119,7 +123,7 @@ echo ""
 
 # Pull latest Docker images
 echo -e "${BLUE}📥 Pulling latest Docker images...${NC}"
-if docker-compose pull; then
+if $DOCKER_COMPOSE pull; then
     echo -e "${GREEN}✅ Docker images updated${NC}"
 else
     echo -e "${YELLOW}⚠️  Warning: Could not pull some images. Continuing with local images.${NC}"
@@ -130,14 +134,14 @@ echo ""
 echo -e "${BLUE}🚀 Starting services...${NC}"
 echo ""
 
-if docker-compose up -d; then
+if $DOCKER_COMPOSE up -d; then
     echo ""
     echo -e "${GREEN}✅ Services started successfully${NC}"
 else
     echo ""
     echo -e "${RED}❌ Failed to start services${NC}"
     echo ""
-    echo "Check logs with: cd atlas && docker-compose logs"
+    echo "Check logs with: cd atlas && $DOCKER_COMPOSE logs"
     echo ""
     echo "Common issues:"
     echo "  - MongoDB Atlas IP whitelist: Ensure your server IP is whitelisted"
@@ -176,7 +180,7 @@ while [ $ELAPSED -lt $MAX_WAIT ]; do
         echo ""
         echo -e "${RED}❌ Backend is unhealthy. Checking logs...${NC}"
         echo ""
-        docker-compose logs --tail=20 backend
+        $DOCKER_COMPOSE logs --tail=20 backend
         echo ""
         echo -e "${YELLOW}Possible issues:${NC}"
         echo "  - MongoDB Atlas connection failed (check IP whitelist)"
@@ -195,13 +199,13 @@ if [ $ELAPSED -ge $MAX_WAIT ]; then
     echo -e "${YELLOW}⚠️  Warning: Services did not become healthy within $MAX_WAIT seconds${NC}"
     echo "This is normal on first startup as images need to be downloaded."
     echo ""
-    echo "Check status with: cd atlas && docker-compose ps"
-    echo "Check logs with: cd atlas && docker-compose logs -f"
+    echo "Check status with: cd atlas && $DOCKER_COMPOSE ps"
+    echo "Check logs with: cd atlas && $DOCKER_COMPOSE logs -f"
     echo ""
     echo "If backend keeps failing:"
     echo "  1. Verify MongoDB Atlas connection string"
     echo "  2. Check if your IP is whitelisted in Atlas Network Access"
-    echo "  3. Test connection: docker-compose logs backend"
+    echo "  3. Test connection: $DOCKER_COMPOSE logs backend"
 fi
 
 echo ""
@@ -216,9 +220,9 @@ echo -e "  ${GREEN}Health Check:${NC} http://localhost:8080/actuator/health"
 echo -e "  ${GREEN}MongoDB:${NC}      Managed by Atlas"
 echo ""
 echo "Manage services:"
-echo "  View logs:       cd atlas && docker-compose logs -f"
-echo "  Stop services:   cd atlas && docker-compose down"
-echo "  Restart service: cd atlas && docker-compose restart <service>"
+echo "  View logs:       cd atlas && $DOCKER_COMPOSE logs -f"
+echo "  Stop services:   cd atlas && $DOCKER_COMPOSE down"
+echo "  Restart service: cd atlas && $DOCKER_COMPOSE restart <service>"
 echo ""
 echo "MongoDB Atlas Dashboard:"
 echo "  https://cloud.mongodb.com"

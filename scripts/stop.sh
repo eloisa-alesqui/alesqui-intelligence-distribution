@@ -26,8 +26,12 @@ echo -e "${BLUE}Alesqui Intelligence - Stop Services${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+# Detect Docker Compose command (v1 or v2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
     exit 1
 fi
@@ -61,7 +65,7 @@ if [ "$LOCAL_RUNNING" = true ]; then
     echo -e "${BLUE}🛑 Stopping local deployment...${NC}"
     cd "$LOCAL_DIR"
     
-    if docker-compose down; then
+    if $DOCKER_COMPOSE down; then
         echo -e "${GREEN}✅ Local deployment stopped successfully${NC}"
     else
         echo -e "${RED}❌ Failed to stop local deployment${NC}"
@@ -74,7 +78,7 @@ if [ "$ATLAS_RUNNING" = true ]; then
     echo -e "${BLUE}🛑 Stopping Atlas deployment...${NC}"
     cd "$ATLAS_DIR"
     
-    if docker-compose down; then
+    if $DOCKER_COMPOSE down; then
         echo -e "${GREEN}✅ Atlas deployment stopped successfully${NC}"
     else
         echo -e "${RED}❌ Failed to stop Atlas deployment${NC}"
@@ -98,7 +102,7 @@ fi
 echo ""
 echo "To remove all data (⚠️  destructive):"
 if [ "$LOCAL_RUNNING" = true ]; then
-    echo "  cd local && docker-compose down -v"
+    echo "  cd local && $DOCKER_COMPOSE down -v"
 elif [ "$ATLAS_RUNNING" = true ]; then
     echo "  Note: Atlas deployment doesn't use local volumes"
 fi

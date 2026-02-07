@@ -26,8 +26,12 @@ echo -e "${BLUE}Alesqui Intelligence - Update Services${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+# Detect Docker Compose command (v1 or v2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
     exit 1
 fi
@@ -67,7 +71,7 @@ cd "$DEPLOYMENT_DIR"
 
 # Show current versions
 echo -e "${BLUE}📊 Current service status:${NC}"
-docker-compose ps
+$DOCKER_COMPOSE ps
 echo ""
 
 # Confirm update
@@ -88,7 +92,7 @@ echo ""
 echo -e "${BLUE}📥 Pulling latest Docker images...${NC}"
 echo ""
 
-if docker-compose pull; then
+if $DOCKER_COMPOSE pull; then
     echo ""
     echo -e "${GREEN}✅ Images updated successfully${NC}"
 else
@@ -102,7 +106,7 @@ echo ""
 echo -e "${BLUE}🔄 Restarting services with new images...${NC}"
 echo ""
 
-if docker-compose up -d; then
+if $DOCKER_COMPOSE up -d; then
     echo ""
     echo -e "${GREEN}✅ Services restarted${NC}"
 else
@@ -110,8 +114,8 @@ else
     echo -e "${RED}❌ Failed to restart services${NC}"
     echo ""
     echo "Try to recover with:"
-    echo "  cd $(basename $DEPLOYMENT_DIR) && docker-compose down"
-    echo "  cd $(basename $DEPLOYMENT_DIR) && docker-compose up -d"
+    echo "  cd $(basename $DEPLOYMENT_DIR) && $DOCKER_COMPOSE down"
+    echo "  cd $(basename $DEPLOYMENT_DIR) && $DOCKER_COMPOSE up -d"
     exit 1
 fi
 
@@ -171,8 +175,8 @@ if [ $ELAPSED -ge $MAX_WAIT ]; then
     echo ""
     echo -e "${YELLOW}⚠️  Warning: Some services are not healthy yet${NC}"
     echo ""
-    echo "Check status: docker-compose ps"
-    echo "Check logs: docker-compose logs -f"
+    echo "Check status: $DOCKER_COMPOSE ps"
+    echo "Check logs: $DOCKER_COMPOSE logs -f"
 fi
 
 echo ""
@@ -183,7 +187,7 @@ echo ""
 
 # Show updated service status
 echo -e "${BLUE}📊 Updated service status:${NC}"
-docker-compose ps
+$DOCKER_COMPOSE ps
 echo ""
 
 echo "Services are running:"
@@ -191,5 +195,5 @@ echo -e "  ${GREEN}Frontend:${NC}     http://localhost"
 echo -e "  ${GREEN}Backend API:${NC}  http://localhost:8080"
 echo -e "  ${GREEN}Health Check:${NC} http://localhost:8080/actuator/health"
 echo ""
-echo "View logs: docker-compose logs -f"
+echo "View logs: $DOCKER_COMPOSE logs -f"
 echo ""

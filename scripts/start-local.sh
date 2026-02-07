@@ -32,8 +32,12 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+# Detect Docker Compose command (v1 or v2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
     echo "Please install Docker Compose first: https://docs.docker.com/compose/install/"
     exit 1
@@ -95,7 +99,7 @@ echo ""
 
 # Pull latest Docker images
 echo -e "${BLUE}📥 Pulling latest Docker images...${NC}"
-if docker-compose pull; then
+if $DOCKER_COMPOSE pull; then
     echo -e "${GREEN}✅ Docker images updated${NC}"
 else
     echo -e "${YELLOW}⚠️  Warning: Could not pull some images. Continuing with local images.${NC}"
@@ -106,7 +110,7 @@ echo ""
 echo -e "${BLUE}🚀 Starting services...${NC}"
 echo ""
 
-if docker-compose up -d; then
+if $DOCKER_COMPOSE up -d; then
     echo ""
     echo -e "${GREEN}✅ Services started successfully${NC}"
 else
@@ -169,9 +173,9 @@ echo -e "  ${GREEN}Health Check:${NC} http://localhost:8080/actuator/health"
 echo -e "  ${GREEN}MongoDB:${NC}      localhost:27017"
 echo ""
 echo "Manage services:"
-echo "  View logs:       cd local && docker-compose logs -f"
-echo "  Stop services:   cd local && docker-compose down"
-echo "  Restart service: cd local && docker-compose restart <service>"
+echo "  View logs:       cd local && $DOCKER_COMPOSE logs -f"
+echo "  Stop services:   cd local && $DOCKER_COMPOSE down"
+echo "  Restart service: cd local && $DOCKER_COMPOSE restart <service>"
 echo ""
 echo "Or use utility scripts from the root directory:"
 echo "  ./scripts/stop.sh    - Stop all services"
