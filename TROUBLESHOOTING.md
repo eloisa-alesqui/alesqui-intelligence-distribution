@@ -480,7 +480,7 @@ Common issues and solutions for Alesqui Intelligence deployment.
 
 3. **Try pulling manually:**
    ```bash
-   docker pull eloisa-alesqui/alesqui-intelligence-backend:latest
+   docker pull alesquiintelligence/backend:latest
    ```
 
 4. **If using private registry, login:**

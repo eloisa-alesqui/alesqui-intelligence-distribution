@@ -211,11 +211,10 @@ docker-compose --profile local-db up -d
 | `FRONTEND_URL` | No | `http://localhost` | Frontend URL for CORS |
 | `VITE_API_BASE_URL` | No | `http://localhost:8080` | Backend API URL |
 | `CORS_ADDITIONAL_ORIGINS` | No | - | Additional CORS origins (comma-separated) |
-| `BACKEND_IMAGE` | No | `eloisa-alesqui/...` | Backend Docker image |
-| `FRONTEND_IMAGE` | No | `eloisa-alesqui/...` | Frontend Docker image |
+| `BACKEND_IMAGE` | No | `alesquiintelligence/backend:latest` | Backend Docker image |
+| `FRONTEND_IMAGE` | No | `alesquiintelligence/frontend:latest` | Frontend Docker image |
 | `FRONTEND_PORT` | No | `80` | Frontend exposed port |
 | `BACKEND_PORT` | No | `8080` | Backend exposed port |
-| `SPRING_PROFILES_ACTIVE` | No | `default` | Spring Boot profile |
 | `JAVA_OPTS` | No | Memory settings | JVM options |
 
 ---
@@ -461,8 +460,8 @@ docker-compose down
 docker-compose down -v
 
 # Remove images
-docker rmi eloisa-alesqui/alesqui-intelligence-backend:latest
-docker rmi eloisa-alesqui/alesqui-intelligence-frontend:latest
+docker rmi alesquiintelligence/backend:latest
+docker rmi alesquiintelligence/frontend:latest
 docker rmi mongo:7
 ```
 

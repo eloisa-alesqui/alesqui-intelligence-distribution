@@ -31,13 +31,12 @@ services:
   # Backend Service (Java Spring Boot)
   # ========================================
   backend:
-    image: ${BACKEND_IMAGE:-eloisa-alesqui/alesqui-intelligence-backend:latest}
+    image: ${BACKEND_IMAGE:-alesquiintelligence/backend:latest}
     container_name: alesqui-backend
     restart: unless-stopped
     environment:
       # Server Configuration
       PORT: 8080
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
       
       # MongoDB Configuration
       MONGODB_URI: ${MONGODB_URI}
@@ -79,7 +78,7 @@ services:
   # Frontend Service (React + Nginx)
   # ========================================
   frontend:
-    image: ${FRONTEND_IMAGE:-eloisa-alesqui/alesqui-intelligence-frontend:latest}
+    image: ${FRONTEND_IMAGE:-alesquiintelligence/frontend:latest}
     container_name: alesqui-frontend
     restart: unless-stopped
     environment:
