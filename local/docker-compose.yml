@@ -5,7 +5,7 @@ services:
   # MongoDB Database (Local Container)
   # ========================================
   mongodb:
-    image: mongo:7.0
+    image: mongo:7.0.15
     container_name: alesqui-mongodb
     restart: unless-stopped
     environment:

@@ -114,8 +114,8 @@ else
     echo -e "${RED}❌ Failed to restart services${NC}"
     echo ""
     echo "Try to recover with:"
-    echo "  cd $(basename $DEPLOYMENT_DIR) && $DOCKER_COMPOSE down"
-    echo "  cd $(basename $DEPLOYMENT_DIR) && $DOCKER_COMPOSE up -d"
+    echo "  cd $DEPLOYMENT_DIR && $DOCKER_COMPOSE down"
+    echo "  cd $DEPLOYMENT_DIR && $DOCKER_COMPOSE up -d"
     exit 1
 fi
 

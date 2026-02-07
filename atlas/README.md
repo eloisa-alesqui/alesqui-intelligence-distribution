@@ -502,7 +502,7 @@ Atlas provides built-in monitoring:
 1. Check firewall isn't blocking outbound connections on port 27017
 2. Verify DNS resolution works:
    ```bash
-   docker exec alesqui-backend nslookup cluster0.xxxxx.mongodb.net
+   docker exec alesqui-backend getent hosts cluster0.xxxxx.mongodb.net
    ```
 3. Try a different Atlas region if issues persist
 

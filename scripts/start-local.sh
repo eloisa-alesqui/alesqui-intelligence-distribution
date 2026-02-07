@@ -117,7 +117,7 @@ else
     echo ""
     echo -e "${RED}❌ Failed to start services${NC}"
     echo ""
-    echo "Check logs with: cd local && docker-compose logs"
+    echo "Check logs with: cd local && $DOCKER_COMPOSE logs"
     exit 1
 fi
 
