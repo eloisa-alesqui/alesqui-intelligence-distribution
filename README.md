@@ -58,6 +58,25 @@ Once services are healthy:
 
 ---
 
+## 🔐 First Login
+
+After starting the services, an admin user is automatically created on first startup.
+
+To get your admin credentials:
+
+```bash
+# View the auto-generated password in logs
+docker-compose logs backend | grep InitialAdmin
+```
+
+Default admin email: `admin@company.com`
+
+**Important:** Change the password after your first login!
+
+See the [local setup guide](local/README.md#-initial-admin-user) or [Atlas setup guide](atlas/README.md#-initial-admin-user) for more details on customizing admin credentials.
+
+---
+
 ## 🗂️ Repository Structure
 
 ```

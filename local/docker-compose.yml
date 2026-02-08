@@ -69,6 +69,10 @@ services:
       COMPANY_NAME: ${COMPANY_NAME:-Alesqui Intelligence}
       AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-730}
       
+      # Initial Admin User (optional)
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+      
       # Java Options
       JAVA_OPTS: ${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0}
     ports:
