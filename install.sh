@@ -17,7 +17,7 @@ set -u  # Exit on undefined variable
 INSTALL_LOG="/tmp/alesqui-install.log"
 
 # Detect if running from cloned repo or downloaded script
-if [ -d "$(dirname "${BASH_SOURCE[0]}")/.git" ]; then
+if [ -d "$(dirname "${BASH_SOURCE[0]}")/.git" ] || git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
     # Running from cloned repository
     REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
     FROM_CLONE=true
@@ -183,7 +183,11 @@ check_docker() {
     DOCKER_MAJOR=$(echo "$DOCKER_VERSION" | cut -d. -f1)
     DOCKER_MINOR=$(echo "$DOCKER_VERSION" | cut -d. -f2)
     
-    if [ "$DOCKER_MAJOR" -lt 20 ] || ([ "$DOCKER_MAJOR" -eq 20 ] && [ "$DOCKER_MINOR" -lt 10 ]); then
+    # Validate version numbers are numeric
+    if ! [[ "$DOCKER_MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$DOCKER_MINOR" =~ ^[0-9]+$ ]]; then
+        print_warning "Could not parse Docker version"
+        log "Docker version parsing failed: $DOCKER_VERSION"
+    elif [ "$DOCKER_MAJOR" -lt 20 ] || ([ "$DOCKER_MAJOR" -eq 20 ] && [ "$DOCKER_MINOR" -lt 10 ]); then
         print_warning "Docker version $DOCKER_VERSION is older than recommended (20.10+)"
         log "Docker version $DOCKER_VERSION (warning: old version)"
     else
@@ -399,8 +403,14 @@ configure_env_atlas() {
     echo "  5. Get your connection string"
     echo ""
     read -p "MongoDB Atlas URI: " mongodb_uri
-    while [ -z "$mongodb_uri" ] || [[ "$mongodb_uri" == *"username:password"* ]] || [[ "$mongodb_uri" == *"cluster0.xxxxx"* ]]; do
-        print_error "Invalid MongoDB URI. Please provide a real Atlas connection string."
+    while [ -z "$mongodb_uri" ] || [[ "$mongodb_uri" == *"username:password"* ]] || [[ "$mongodb_uri" == *"cluster0.xxxxx"* ]] || ! [[ "$mongodb_uri" =~ ^mongodb(\+srv)?:// ]]; do
+        if [ -z "$mongodb_uri" ]; then
+            print_error "MongoDB URI cannot be empty"
+        elif [[ "$mongodb_uri" == *"username:password"* ]] || [[ "$mongodb_uri" == *"cluster0.xxxxx"* ]]; then
+            print_error "Please replace placeholders with your actual values"
+        elif ! [[ "$mongodb_uri" =~ ^mongodb(\+srv)?:// ]]; then
+            print_error "MongoDB URI must start with 'mongodb://' or 'mongodb+srv://'"
+        fi
         read -p "MongoDB Atlas URI: " mongodb_uri
     done
     sed_inplace "s|^MONGODB_ATLAS_URI=.*|MONGODB_ATLAS_URI=$mongodb_uri|" "$ENV_FILE"
@@ -429,8 +439,16 @@ configure_env_atlas() {
     echo -e "${BOLD}OpenAI Configuration:${NC}"
     echo "Get your API key from: https://platform.openai.com/api-keys"
     read -p "OpenAI API Key: " openai_key
-    while [ -z "$openai_key" ] || [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]]; do
-        print_error "Invalid OpenAI API Key"
+    while [ -z "$openai_key" ] || [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]] || ! [[ "$openai_key" =~ ^sk- ]] || [ ${#openai_key} -lt 20 ]; do
+        if [ -z "$openai_key" ]; then
+            print_error "OpenAI API Key cannot be empty"
+        elif [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
+            print_error "Please replace with your actual API key"
+        elif ! [[ "$openai_key" =~ ^sk- ]]; then
+            print_error "OpenAI API Key must start with 'sk-'"
+        elif [ ${#openai_key} -lt 20 ]; then
+            print_error "OpenAI API Key is too short"
+        fi
         read -p "OpenAI API Key: " openai_key
     done
     sed_inplace "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE"
@@ -563,8 +581,16 @@ configure_env_local() {
     echo -e "${BOLD}OpenAI Configuration:${NC}"
     echo "Get your API key from: https://platform.openai.com/api-keys"
     read -p "OpenAI API Key: " openai_key
-    while [ -z "$openai_key" ] || [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]]; do
-        print_error "Invalid OpenAI API Key"
+    while [ -z "$openai_key" ] || [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]] || ! [[ "$openai_key" =~ ^sk- ]] || [ ${#openai_key} -lt 20 ]; do
+        if [ -z "$openai_key" ]; then
+            print_error "OpenAI API Key cannot be empty"
+        elif [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
+            print_error "Please replace with your actual API key"
+        elif ! [[ "$openai_key" =~ ^sk- ]]; then
+            print_error "OpenAI API Key must start with 'sk-'"
+        elif [ ${#openai_key} -lt 20 ]; then
+            print_error "OpenAI API Key is too short"
+        fi
         read -p "OpenAI API Key: " openai_key
     done
     sed_inplace "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE"
