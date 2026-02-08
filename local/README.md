@@ -2,6 +2,26 @@
 
 Deploy Alesqui Intelligence with a self-hosted MongoDB container running locally in Docker.
 
+## 🚀 Quick Start
+
+**Easiest method - Automated installer:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh | bash
+# Select option [2] for Local deployment
+```
+
+The installer will guide you through:
+- ✅ MongoDB password generation
+- ✅ JWT secret generation
+- ✅ OpenAI API key setup
+- ✅ SMTP configuration (optional)
+- ✅ Automated deployment
+
+**Manual method:** Follow the [detailed instructions](#-installation-steps) below.
+
+---
+
 ## 📋 Overview
 
 This deployment option includes:

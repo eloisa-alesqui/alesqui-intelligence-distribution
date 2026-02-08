@@ -6,13 +6,183 @@ Common issues and solutions for Alesqui Intelligence deployment.
 
 ## Table of Contents
 
-1. [Backend Issues](#backend-issues)
-2. [Frontend Issues](#frontend-issues)
-3. [MongoDB Issues](#mongodb-issues)
-4. [Network Issues](#network-issues)
-5. [Performance Issues](#performance-issues)
-6. [Docker Issues](#docker-issues)
-7. [Diagnostic Commands](#diagnostic-commands)
+1. [Installation Issues](#installation-issues)
+2. [Backend Issues](#backend-issues)
+3. [Frontend Issues](#frontend-issues)
+4. [MongoDB Issues](#mongodb-issues)
+5. [Network Issues](#network-issues)
+6. [Performance Issues](#performance-issues)
+7. [Docker Issues](#docker-issues)
+8. [Diagnostic Commands](#diagnostic-commands)
+
+---
+
+## Installation Issues
+
+### Quick Installer Fails
+
+**Problem:** The quick installer script fails or hangs.
+
+**Solutions:**
+
+1. **Check that you have all prerequisites:**
+   ```bash
+   docker --version        # Should be 20.10+
+   docker compose version  # Should be 2.0+
+   ```
+
+2. **Download and run the installer manually:**
+   ```bash
+   curl -LO https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+3. **Check installation logs:**
+   ```bash
+   cat /tmp/alesqui-install.log
+   ```
+
+4. **Verify network connectivity:**
+   ```bash
+   curl -I https://github.com
+   ping google.com
+   ```
+
+5. **If Docker permission errors:**
+   ```bash
+   sudo usermod -aG docker $USER
+   newgrp docker
+   # Or run installer with sudo
+   sudo ./install.sh
+   ```
+
+### Cannot Download Installer
+
+**Problem:** `curl` command fails with connection error.
+
+**Solutions:**
+
+1. **Check internet connection:**
+   ```bash
+   ping github.com
+   curl -I https://github.com
+   ```
+
+2. **Try with wget instead:**
+   ```bash
+   wget https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+3. **Download manually from GitHub:**
+   - Go to https://github.com/eloisa-alesqui/alesqui-intelligence-distribution
+   - Click "Code" → "Download ZIP"
+   - Extract and run `./install.sh`
+
+4. **Clone the repository instead:**
+   ```bash
+   git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git
+   cd alesqui-intelligence-distribution
+   ./install.sh
+   ```
+
+### Installation Hangs at "Pulling Docker Images"
+
+**Problem:** Docker image download takes too long or appears stuck.
+
+**Solutions:**
+
+1. **Check Docker Hub connectivity:**
+   ```bash
+   docker pull hello-world
+   ```
+
+2. **Check available disk space:**
+   ```bash
+   df -h
+   docker system df
+   ```
+
+3. **If disk space is low, clean up:**
+   ```bash
+   docker system prune -a
+   ```
+
+4. **Try pulling images manually first:**
+   ```bash
+   docker pull alesquiintelligence/backend:latest
+   docker pull alesquiintelligence/frontend:latest
+   docker pull mongo:7.0  # Only for local deployment
+   ```
+
+5. **Check your internet speed:**
+   - Images are ~1-2GB total
+   - Slow connections may take 10-20 minutes
+
+### Environment Configuration Errors
+
+**Problem:** Installer rejects configuration values.
+
+**Solutions:**
+
+1. **MongoDB Atlas URI format issues:**
+   - Must start with `mongodb+srv://`
+   - Special characters in password must be URL-encoded
+   - Example: `@` becomes `%40`, `#` becomes `%23`
+
+2. **JWT Secret too short:**
+   - Must be at least 32 characters
+   - Let installer generate it automatically (recommended)
+
+3. **OpenAI API Key format:**
+   - Must start with `sk-proj-` or `sk-`
+   - Get valid key from https://platform.openai.com/api-keys
+
+4. **Edit .env file manually if needed:**
+   ```bash
+   cd atlas/  # or local/
+   nano .env
+   ```
+
+### Services Fail to Start After Installation
+
+**Problem:** Docker Compose reports errors when starting services.
+
+**Solutions:**
+
+1. **Check if ports are already in use:**
+   ```bash
+   sudo lsof -i :80
+   sudo lsof -i :8080
+   sudo lsof -i :27017  # Local deployment only
+   ```
+
+2. **Stop conflicting services:**
+   ```bash
+   sudo systemctl stop apache2  # If using port 80
+   sudo systemctl stop nginx    # If using port 80
+   ```
+
+3. **Check Docker daemon is running:**
+   ```bash
+   sudo systemctl status docker
+   sudo systemctl start docker
+   ```
+
+4. **View service logs:**
+   ```bash
+   cd atlas/  # or local/
+   docker-compose logs
+   ```
+
+5. **Restart the installation:**
+   ```bash
+   cd atlas/  # or local/
+   docker-compose down
+   docker-compose up -d
+   ```
 
 ---
 

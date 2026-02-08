@@ -11,11 +11,44 @@ This repository provides two deployment options for the complete Alesqui Intelli
 
 ---
 
-## 📋 Quick Start
+## 🚀 Quick Start
+
+Deploy Alesqui Intelligence in minutes with our automated installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh | bash
+```
+
+The installer will:
+- ✅ Check system requirements
+- ✅ Guide you through configuration
+- ✅ Set up your `.env` file
+- ✅ Deploy all services
+- ✅ Perform health checks
+
+**Alternative:** [Download manually](#-installation) and follow the installation guide.
+
+---
+
+## 📋 Manual Installation
+
+If you prefer manual installation or need more control:
+
+### Option 1: Quick Install Script
+
+Clone the repository and run the installer:
+
+```bash
+git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git
+cd alesqui-intelligence-distribution
+./install.sh
+```
+
+### Option 2: Manual Setup
 
 Choose your deployment option:
 
-### Option A: Local MongoDB (Recommended for Development)
+#### Option A: Local MongoDB (Recommended for Development)
 
 ```bash
 # Clone repository

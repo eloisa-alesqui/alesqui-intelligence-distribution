@@ -4,15 +4,29 @@ Complete installation instructions for deploying Alesqui Intelligence with Docke
 
 ---
 
-## Table of Contents
+## 🎯 Choose Your Installation Method
 
-1. [Prerequisites](#prerequisites)
-2. [Installation Steps](#installation-steps)
-3. [MongoDB Configuration](#mongodb-configuration)
-4. [Environment Variables](#environment-variables)
-5. [Starting the Application](#starting-the-application)
-6. [Verification](#verification)
-7. [Post-Installation](#post-installation)
+### Recommended: Quick Install
+
+For most users, we recommend our automated installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh | bash
+```
+
+This method:
+- ✅ Automatically checks prerequisites
+- ✅ Guides you through configuration
+- ✅ Handles all setup steps
+- ✅ Validates the installation
+
+The installer will prompt you to choose between:
+1. **Atlas Deployment** - Cloud-managed MongoDB (recommended for production)
+2. **Local Deployment** - Self-hosted MongoDB (recommended for development)
+
+### Alternative: Manual Installation
+
+If you need more control or prefer to configure everything manually, continue with the [manual installation instructions](#prerequisites) below.
 
 ---
 
