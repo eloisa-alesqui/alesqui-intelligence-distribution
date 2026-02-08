@@ -158,6 +158,62 @@ Follow the setup wizard on first launch to create your admin account.
 
 ---
 
+## 🔐 Initial Admin User
+
+On first startup, if no users exist in the database, an admin account will be created automatically. This makes it easy to get started without manual user creation.
+
+### Default Credentials
+
+By default, the admin user is created with:
+- **Email:** `admin@company.com`
+- **Password:** Auto-generated (shown in logs)
+
+### Viewing the Generated Password
+
+To see the auto-generated password, check the backend logs:
+
+```bash
+docker-compose logs backend | grep InitialAdmin
+```
+
+You'll see output like:
+
+```
+[InitialAdmin] ========================================
+[InitialAdmin] INITIAL ADMIN USER CREATED SUCCESSFULLY
+[InitialAdmin] ========================================
+[InitialAdmin] 
+[InitialAdmin] Login Credentials:
+[InitialAdmin]   Email:    admin@company.com
+[InitialAdmin]   Password: aB3!xK9mP2wQ7nL5
+[InitialAdmin] 
+[InitialAdmin] ⚠️  Password was auto-generated
+[InitialAdmin] 🔒 IMPORTANT: Change this password after first login!
+[InitialAdmin] 
+[InitialAdmin] Access the application at: http://localhost
+[InitialAdmin] ========================================
+```
+
+### Customizing Admin Credentials
+
+You can customize the initial admin credentials in your `.env` file:
+
+```bash
+# Custom admin email
+INITIAL_ADMIN_EMAIL=admin@mycompany.com
+
+# Custom admin password (optional, leave commented to auto-generate)
+INITIAL_ADMIN_PASSWORD=MySecurePassword123!
+```
+
+**Security Best Practices:**
+- ✅ Use the auto-generated password (more secure)
+- ✅ Change the password immediately after first login
+- ✅ Use a strong, unique password if setting manually
+- ❌ Don't commit the password to version control
+
+---
+
 ## 📊 Managing Services
 
 ### View Logs
