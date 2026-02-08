@@ -47,6 +47,10 @@ services:
       
       # Java Options
       JAVA_OPTS: ${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0}
+      
+      # Logging Configuration
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-WARN}
+      LOGGING_LEVEL_ES_ALESQUI_INTELLIGENCE: ${LOGGING_LEVEL_ES_ALESQUI:-INFO}
     ports:
       - "8080:8080"
     networks:
