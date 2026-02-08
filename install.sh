@@ -277,6 +277,18 @@ choose_deployment() {
 # SECRET GENERATION
 # =============================================================================
 
+# Helper function for sed that works on both Linux and macOS
+sed_inplace() {
+    local pattern="$1"
+    local file="$2"
+    
+    if [ "$OS" = "macOS" ]; then
+        sed -i '' "$pattern" "$file"
+    else
+        sed -i "$pattern" "$file"
+    fi
+}
+
 generate_jwt_secret() {
     if command -v openssl &> /dev/null; then
         openssl rand -base64 32 | tr -d '\n'
@@ -333,7 +345,7 @@ configure_env_atlas() {
     # Company Name
     read -p "Company Name [My Company Inc.]: " company_name
     company_name=${company_name:-"My Company Inc."}
-    sed -i.bak "s/^COMPANY_NAME=.*/COMPANY_NAME=\"$company_name\"/" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s/^COMPANY_NAME=.*/COMPANY_NAME=\"$company_name\"/" "$ENV_FILE"
     
     # MongoDB Atlas URI
     echo ""
@@ -350,7 +362,7 @@ configure_env_atlas() {
         print_error "Invalid MongoDB URI. Please provide a real Atlas connection string."
         read -p "MongoDB Atlas URI: " mongodb_uri
     done
-    sed -i.bak "s|^MONGODB_ATLAS_URI=.*|MONGODB_ATLAS_URI=$mongodb_uri|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s|^MONGODB_ATLAS_URI=.*|MONGODB_ATLAS_URI=$mongodb_uri|" "$ENV_FILE"
     print_success "MongoDB Atlas URI configured"
     
     # JWT Secret
@@ -359,7 +371,7 @@ configure_env_atlas() {
     read -p "Generate JWT_SECRET automatically? [Y/n]: " gen_jwt
     if [[ ! $gen_jwt =~ ^[Nn]$ ]]; then
         jwt_secret=$(generate_jwt_secret)
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
         print_success "JWT_SECRET generated automatically"
     else
         read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
@@ -367,7 +379,7 @@ configure_env_atlas() {
             print_error "JWT_SECRET must be at least 32 characters"
             read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
         done
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
         print_success "JWT_SECRET configured"
     fi
     
@@ -380,19 +392,19 @@ configure_env_atlas() {
         print_error "Invalid OpenAI API Key"
         read -p "OpenAI API Key: " openai_key
     done
-    sed -i.bak "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE"
     print_success "OpenAI API Key configured"
     
     # Frontend URL
     echo ""
     read -p "Frontend URL [https://intelligence.yourcompany.com]: " frontend_url
     frontend_url=${frontend_url:-"https://intelligence.yourcompany.com"}
-    sed -i.bak "s|^FRONTEND_URL=.*|FRONTEND_URL=$frontend_url|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s|^FRONTEND_URL=.*|FRONTEND_URL=$frontend_url|" "$ENV_FILE"
     
     # API URL
     read -p "API URL [https://intelligence.yourcompany.com/api]: " api_url
     api_url=${api_url:-"https://intelligence.yourcompany.com/api"}
-    sed -i.bak "s|^VITE_API_URL=.*|VITE_API_URL=$api_url|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s|^VITE_API_URL=.*|VITE_API_URL=$api_url|" "$ENV_FILE"
     
     # Admin Email
     echo ""
@@ -407,21 +419,21 @@ configure_env_atlas() {
     echo -e "${BOLD}SMTP Configuration (Optional - press Enter to skip):${NC}"
     read -p "SMTP Host [skip]: " smtp_host
     if [ -n "$smtp_host" ] && [ "$smtp_host" != "skip" ]; then
-        sed -i.bak "s|^SMTP_HOST=.*|SMTP_HOST=$smtp_host|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_HOST=.*|SMTP_HOST=$smtp_host|" "$ENV_FILE"
         
         read -p "SMTP Port [587]: " smtp_port
         smtp_port=${smtp_port:-587}
-        sed -i.bak "s|^SMTP_PORT=.*|SMTP_PORT=$smtp_port|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_PORT=.*|SMTP_PORT=$smtp_port|" "$ENV_FILE"
         
         read -p "SMTP User: " smtp_user
-        sed -i.bak "s|^SMTP_USER=.*|SMTP_USER=$smtp_user|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_USER=.*|SMTP_USER=$smtp_user|" "$ENV_FILE"
         
         read -s -p "SMTP Password: " smtp_password
         echo ""
-        sed -i.bak "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=$smtp_password|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=$smtp_password|" "$ENV_FILE"
         
         read -p "From Email: " from_email
-        sed -i.bak "s|^MAIL_FROM_EMAIL=.*|MAIL_FROM_EMAIL=$from_email|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^MAIL_FROM_EMAIL=.*|MAIL_FROM_EMAIL=$from_email|" "$ENV_FILE"
         
         print_success "SMTP configured"
     else
@@ -465,7 +477,7 @@ configure_env_local() {
     # Company Name
     read -p "Company Name [My Company Inc.]: " company_name
     company_name=${company_name:-"My Company Inc."}
-    sed -i.bak "s/^COMPANY_NAME=.*/COMPANY_NAME=\"$company_name\"/" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s/^COMPANY_NAME=.*/COMPANY_NAME=\"$company_name\"/" "$ENV_FILE"
     
     # MongoDB Password
     echo ""
@@ -473,7 +485,7 @@ configure_env_local() {
     read -p "Generate MongoDB password automatically? [Y/n]: " gen_mongo
     if [[ ! $gen_mongo =~ ^[Nn]$ ]]; then
         mongo_password=$(generate_password 24)
-        sed -i.bak "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$mongo_password|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$mongo_password|" "$ENV_FILE"
         print_success "MongoDB password generated automatically"
     else
         read -s -p "Enter MongoDB password: " mongo_password
@@ -483,7 +495,7 @@ configure_env_local() {
             read -s -p "Enter MongoDB password: " mongo_password
             echo ""
         done
-        sed -i.bak "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$mongo_password|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$mongo_password|" "$ENV_FILE"
         print_success "MongoDB password configured"
     fi
     
@@ -493,7 +505,7 @@ configure_env_local() {
     read -p "Generate JWT_SECRET automatically? [Y/n]: " gen_jwt
     if [[ ! $gen_jwt =~ ^[Nn]$ ]]; then
         jwt_secret=$(generate_jwt_secret)
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
         print_success "JWT_SECRET generated automatically"
     else
         read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
@@ -501,7 +513,7 @@ configure_env_local() {
             print_error "JWT_SECRET must be at least 32 characters"
             read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
         done
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
         print_success "JWT_SECRET configured"
     fi
     
@@ -514,14 +526,14 @@ configure_env_local() {
         print_error "Invalid OpenAI API Key"
         read -p "OpenAI API Key: " openai_key
     done
-    sed -i.bak "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE"
     print_success "OpenAI API Key configured"
     
     # Frontend URL
     echo ""
     read -p "Frontend URL [http://localhost]: " frontend_url
     frontend_url=${frontend_url:-"http://localhost"}
-    sed -i.bak "s|^FRONTEND_URL=.*|FRONTEND_URL=$frontend_url|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+    sed_inplace "s|^FRONTEND_URL=.*|FRONTEND_URL=$frontend_url|" "$ENV_FILE"
     
     # Admin Email
     echo ""
@@ -536,21 +548,21 @@ configure_env_local() {
     echo -e "${BOLD}SMTP Configuration (Optional - press Enter to skip):${NC}"
     read -p "SMTP Host [skip]: " smtp_host
     if [ -n "$smtp_host" ] && [ "$smtp_host" != "skip" ]; then
-        sed -i.bak "s|^SMTP_HOST=.*|SMTP_HOST=$smtp_host|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_HOST=.*|SMTP_HOST=$smtp_host|" "$ENV_FILE"
         
         read -p "SMTP Port [587]: " smtp_port
         smtp_port=${smtp_port:-587}
-        sed -i.bak "s|^SMTP_PORT=.*|SMTP_PORT=$smtp_port|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_PORT=.*|SMTP_PORT=$smtp_port|" "$ENV_FILE"
         
         read -p "SMTP User: " smtp_user
-        sed -i.bak "s|^SMTP_USER=.*|SMTP_USER=$smtp_user|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_USER=.*|SMTP_USER=$smtp_user|" "$ENV_FILE"
         
         read -s -p "SMTP Password: " smtp_password
         echo ""
-        sed -i.bak "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=$smtp_password|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=$smtp_password|" "$ENV_FILE"
         
         read -p "From Email: " from_email
-        sed -i.bak "s|^MAIL_FROM_EMAIL=.*|MAIL_FROM_EMAIL=$from_email|" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+        sed_inplace "s|^MAIL_FROM_EMAIL=.*|MAIL_FROM_EMAIL=$from_email|" "$ENV_FILE"
         
         print_success "SMTP configured"
     else
