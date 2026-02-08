@@ -15,7 +15,42 @@ set -u  # Exit on undefined variable
 # =============================================================================
 
 INSTALL_LOG="/tmp/alesqui-install.log"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+
+# Detect if running from cloned repo or downloaded script
+if [ -d "$(dirname "${BASH_SOURCE[0]}")/.git" ]; then
+    # Running from cloned repository
+    REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+    FROM_CLONE=true
+else
+    # Running from downloaded/curled script - need to clone first
+    REPO_DIR=""
+    FROM_CLONE=false
+fi
+
+# If not running from cloned repo, we need to clone it
+if [ "$FROM_CLONE" = false ]; then
+    echo ""
+    echo "This installer needs the full repository to proceed."
+    echo "We'll clone it for you now..."
+    echo ""
+    
+    CLONE_DIR="/tmp/alesqui-intelligence-$(date +%s)"
+    if command -v git &> /dev/null; then
+        git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git "$CLONE_DIR"
+        cd "$CLONE_DIR"
+        REPO_DIR="$CLONE_DIR"
+    else
+        echo "Error: git is not installed and is required to download the repository."
+        echo ""
+        echo "Please either:"
+        echo "  1. Install git and run this script again"
+        echo "  2. Clone the repository manually:"
+        echo "     git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git"
+        echo "     cd alesqui-intelligence-distribution"
+        echo "     ./install.sh"
+        exit 1
+    fi
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -45,7 +80,13 @@ log_error() {
 print_header() {
     echo ""
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${CYAN}${BOLD}   Alesqui Intelligence Installer${NC}"
+    echo -e "${CYAN}     _    _                 _      ${NC}"
+    echo -e "${CYAN}    / \\  | | ___  ___  __ _(_)     ${NC}"
+    echo -e "${CYAN}   / _ \\ | |/ _ \\/ __|/ _\` | |     ${NC}"
+    echo -e "${CYAN}  / ___ \\| |  __/\\__ \\ (_| | |     ${NC}"
+    echo -e "${CYAN} /_/   \\_\\_|\\___||___/\\__, |_|     ${NC}"
+    echo -e "${CYAN}                         |_|       ${NC}"
+    echo -e "${CYAN}${BOLD}   Intelligence Distribution${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
 }
