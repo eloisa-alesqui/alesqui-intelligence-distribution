@@ -2,6 +2,26 @@
 
 Deploy Alesqui Intelligence with MongoDB Atlas - a fully managed cloud database service.
 
+## 🚀 Quick Start
+
+**Easiest method - Automated installer:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh | bash
+# Select option [1] for Atlas deployment
+```
+
+The installer will guide you through:
+- ✅ MongoDB Atlas connection configuration
+- ✅ JWT secret generation
+- ✅ OpenAI API key setup
+- ✅ SMTP configuration (optional)
+- ✅ Automated deployment
+
+**Manual method:** Follow the [detailed instructions](#-mongodb-atlas-setup) below.
+
+---
+
 ## 📋 Overview
 
 This deployment option includes:
