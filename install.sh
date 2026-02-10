@@ -117,14 +117,11 @@ print_info() {
 # SIGNAL HANDLING
 # =============================================================================
 
-cleanup() {
-    echo ""
-    print_warning "Installation interrupted. Cleaning up..."
-    log "Installation interrupted by user"
-    exit 130
-}
+# Trap errors
+trap 'echo -e "${RED}Error occurred. Installation aborted.${NC}"; exit 1' ERR
 
-trap cleanup SIGINT SIGTERM
+# Trap interrupt
+trap 'echo -e "${YELLOW}Installation cancelled by user.${NC}"; exit 130' INT TERM
 
 # =============================================================================
 # DEPENDENCY CHECKS
@@ -257,17 +254,16 @@ check_utilities() {
 }
 
 check_dependencies() {
-    print_header
-    echo "Welcome! This installer will help you deploy Alesqui Intelligence."
-    echo ""
+    print_section "Checking prerequisites..."
     
-    log "=== Installation started ==="
     log "Installation log: $INSTALL_LOG"
     
     check_os
     check_docker
     check_docker_compose
     check_utilities
+    
+    echo ""
 }
 
 # =============================================================================
@@ -357,8 +353,126 @@ generate_password() {
 # ENVIRONMENT CONFIGURATION
 # =============================================================================
 
-configure_env_atlas() {
-    print_section "Configuring Atlas Deployment"
+configure_environment() {
+    print_section "Environment Configuration"
+    
+    echo ""
+    echo "Let's configure your deployment."
+    echo ""
+    
+    # Company Name
+    read -p "Company Name [default: My Company]: " company_name
+    company_name=${company_name:-"My Company"}
+    log "Company name: $company_name"
+    
+    # MongoDB Configuration - Atlas or Local specific
+    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
+        echo ""
+        print_info "MongoDB Atlas Configuration:"
+        echo "You need a MongoDB Atlas connection string."
+        echo "Get one at: https://cloud.mongodb.com"
+        echo ""
+        read -p "Enter MongoDB Atlas URI (mongodb+srv://...): " mongodb_uri
+        while [[ ! $mongodb_uri =~ ^mongodb\+srv:// ]]; do
+            print_error "Invalid URI. Must start with mongodb+srv://"
+            read -p "Enter MongoDB Atlas URI: " mongodb_uri
+        done
+        log "MongoDB Atlas URI configured"
+    else
+        echo ""
+        print_info "MongoDB Configuration (Local):"
+        read -p "Enter MongoDB password (for local container) [default: mongopassword]: " mongodb_password
+        mongodb_password=${mongodb_password:-mongopassword}
+        log "MongoDB password configured"
+    fi
+    
+    # JWT Secret Generation
+    echo ""
+    print_info "JWT Secret Configuration:"
+    echo "A JWT secret is required for authentication token signing."
+    read -p "Generate JWT secret automatically? [Y/n]: " generate_jwt
+    if [[ $generate_jwt =~ ^[Nn]$ ]]; then
+        read -p "Enter your JWT secret (minimum 32 characters): " jwt_secret
+        while [ ${#jwt_secret} -lt 32 ]; do
+            print_error "JWT secret must be at least 32 characters"
+            read -p "Enter JWT secret: " jwt_secret
+        done
+    else
+        jwt_secret=$(generate_jwt_secret)
+        print_success "Generated JWT secret"
+    fi
+    log "JWT secret configured"
+    
+    # OpenAI API Key
+    echo ""
+    print_info "OpenAI API Key:"
+    echo "Get your API key at: https://platform.openai.com/api-keys"
+    read -p "Enter OpenAI API key (sk-...): " openai_key
+    while [[ ! $openai_key =~ ^sk- ]]; do
+        print_error "Invalid API key. Must start with 'sk-'"
+        read -p "Enter OpenAI API key: " openai_key
+    done
+    log "OpenAI API key configured"
+    
+    # SMTP Configuration (REQUIRED)
+    echo ""
+    print_info "SMTP Configuration (REQUIRED for user account activation):"
+    echo "Supported providers: Gmail, SendGrid, Mailgun, Amazon SES, or company SMTP"
+    echo ""
+    read -p "SMTP Host (e.g., smtp.gmail.com): " smtp_host
+    while [ -z "$smtp_host" ]; do
+        print_error "SMTP Host is required"
+        read -p "SMTP Host (e.g., smtp.gmail.com): " smtp_host
+    done
+    
+    read -p "SMTP Port [default: 587]: " smtp_port
+    smtp_port=${smtp_port:-587}
+    
+    read -p "SMTP User (email address): " smtp_user
+    while [ -z "$smtp_user" ]; do
+        print_error "SMTP User is required"
+        read -p "SMTP User (email address): " smtp_user
+    done
+    
+    read -sp "SMTP Password: " smtp_password
+    echo ""
+    while [ -z "$smtp_password" ]; do
+        print_error "SMTP Password is required"
+        read -sp "SMTP Password: " smtp_password
+        echo ""
+    done
+    
+    read -p "Email 'From' address [default: $smtp_user]: " from_email
+    from_email=${from_email:-$smtp_user}
+    log "SMTP configured"
+    
+    # Frontend URL
+    echo ""
+    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
+        read -p "Frontend URL [default: https://intelligence.yourcompany.com]: " frontend_url
+        frontend_url=${frontend_url:-"https://intelligence.yourcompany.com"}
+    else
+        read -p "Frontend URL [default: http://localhost]: " frontend_url
+        frontend_url=${frontend_url:-"http://localhost"}
+    fi
+    log "Frontend URL: $frontend_url"
+    
+    # Admin Email (REQUIRED)
+    echo ""
+    read -p "Admin email address: " admin_email
+    while [[ ! $admin_email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; do
+        print_error "Invalid email format"
+        read -p "Admin email address: " admin_email
+    done
+    log "Admin email: $admin_email"
+    
+    print_success "Environment configuration completed"
+}
+
+
+
+create_env_file() {
+    print_section "Creating .env file..."
     
     ENV_FILE="$DEPLOYMENT_DIR/.env"
     
@@ -373,418 +487,160 @@ configure_env_atlas() {
         fi
     fi
     
-    # Copy from example
-    if [ ! -f "$DEPLOYMENT_DIR/.env.example" ]; then
-        print_error ".env.example not found in $DEPLOYMENT_DIR"
-        log_error ".env.example not found"
-        exit 1
-    fi
-    
-    cp "$DEPLOYMENT_DIR/.env.example" "$ENV_FILE"
-    print_success ".env file created"
-    
-    echo ""
-    echo "Let's configure your deployment. Press Enter to skip optional fields."
-    echo ""
-    
-    # Company Name
-    read -p "Company Name [My Company Inc.]: " company_name
-    company_name=${company_name:-"My Company Inc."}
-    sed_inplace "s/^COMPANY_NAME=.*/COMPANY_NAME=\"$company_name\"/" "$ENV_FILE"
-    
-    # MongoDB Atlas URI
-    echo ""
-    echo -e "${BOLD}MongoDB Atlas Configuration:${NC}"
-    echo "If you haven't created an Atlas cluster yet:"
-    echo "  1. Go to https://cloud.mongodb.com"
-    echo "  2. Create a free cluster (M0)"
-    echo "  3. Create a database user"
-    echo "  4. Whitelist your IP (0.0.0.0/0 for testing)"
-    echo "  5. Get your connection string"
-    echo ""
-    read -p "MongoDB Atlas URI: " mongodb_uri
-    while [ -z "$mongodb_uri" ] || [[ "$mongodb_uri" == *"username:password"* ]] || [[ "$mongodb_uri" == *"cluster0.xxxxx"* ]] || ! [[ "$mongodb_uri" =~ ^mongodb(\+srv)?:// ]]; do
-        if [ -z "$mongodb_uri" ]; then
-            print_error "MongoDB URI cannot be empty"
-        elif [[ "$mongodb_uri" == *"username:password"* ]] || [[ "$mongodb_uri" == *"cluster0.xxxxx"* ]]; then
-            print_error "Please replace placeholders with your actual values"
-        elif ! [[ "$mongodb_uri" =~ ^mongodb(\+srv)?:// ]]; then
-            print_error "MongoDB URI must start with 'mongodb://' or 'mongodb+srv://'"
-        fi
-        read -p "MongoDB Atlas URI: " mongodb_uri
-    done
-    sed_inplace "s|^MONGODB_ATLAS_URI=.*|MONGODB_ATLAS_URI=$mongodb_uri|" "$ENV_FILE"
-    print_success "MongoDB Atlas URI configured"
-    
-    # JWT Secret
-    echo ""
-    echo -e "${BOLD}JWT Secret Generation:${NC}"
-    read -p "Generate JWT_SECRET automatically? [Y/n]: " gen_jwt
-    if [[ ! $gen_jwt =~ ^[Nn]$ ]]; then
-        jwt_secret=$(generate_jwt_secret)
-        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
-        print_success "JWT_SECRET generated automatically"
-    else
-        read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
-        while [ ${#jwt_secret} -lt 32 ]; do
-            print_error "JWT_SECRET must be at least 32 characters"
-            read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
-        done
-        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
-        print_success "JWT_SECRET configured"
-    fi
-    
-    # OpenAI API Key
-    echo ""
-    echo -e "${BOLD}OpenAI Configuration:${NC}"
-    echo "Get your API key from: https://platform.openai.com/api-keys"
-    read -p "OpenAI API Key: " openai_key
-    while [ -z "$openai_key" ] || [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]] || ! [[ "$openai_key" =~ ^sk- ]] || [ ${#openai_key} -lt 20 ]; do
-        if [ -z "$openai_key" ]; then
-            print_error "OpenAI API Key cannot be empty"
-        elif [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
-            print_error "Please replace with your actual API key"
-        elif ! [[ "$openai_key" =~ ^sk- ]]; then
-            print_error "OpenAI API Key must start with 'sk-'"
-        elif [ ${#openai_key} -lt 20 ]; then
-            print_error "OpenAI API Key is too short"
-        fi
-        read -p "OpenAI API Key: " openai_key
-    done
-    sed_inplace "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE"
-    print_success "OpenAI API Key configured"
-    
-    # Frontend URL
-    echo ""
-    read -p "Frontend URL [https://intelligence.yourcompany.com]: " frontend_url
-    frontend_url=${frontend_url:-"https://intelligence.yourcompany.com"}
-    sed_inplace "s|^FRONTEND_URL=.*|FRONTEND_URL=$frontend_url|" "$ENV_FILE"
-    
-    # API URL
-    read -p "API URL [https://intelligence.yourcompany.com/api]: " api_url
-    api_url=${api_url:-"https://intelligence.yourcompany.com/api"}
-    sed_inplace "s|^VITE_API_URL=.*|VITE_API_URL=$api_url|" "$ENV_FILE"
-    
-    # Admin Email
-    echo ""
-    echo -e "${BOLD}Initial Admin User (Optional):${NC}"
-    read -p "Admin Email [admin@company.com]: " admin_email
-    if [ -n "$admin_email" ] && [ "$admin_email" != "admin@company.com" ]; then
-        echo "INITIAL_ADMIN_EMAIL=$admin_email" >> "$ENV_FILE"
-    fi
-    
-    # SMTP Configuration (optional)
-    echo ""
-    echo -e "${BOLD}SMTP Configuration (Optional - press Enter to skip):${NC}"
-    read -p "SMTP Host [skip]: " smtp_host
-    if [ -n "$smtp_host" ] && [ "$smtp_host" != "skip" ]; then
-        sed_inplace "s|^SMTP_HOST=.*|SMTP_HOST=$smtp_host|" "$ENV_FILE"
-        
-        read -p "SMTP Port [587]: " smtp_port
-        smtp_port=${smtp_port:-587}
-        sed_inplace "s|^SMTP_PORT=.*|SMTP_PORT=$smtp_port|" "$ENV_FILE"
-        
-        read -p "SMTP User: " smtp_user
-        sed_inplace "s|^SMTP_USER=.*|SMTP_USER=$smtp_user|" "$ENV_FILE"
-        
-        read -s -p "SMTP Password: " smtp_password
-        echo ""
-        sed_inplace "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=$smtp_password|" "$ENV_FILE"
-        
-        read -p "From Email: " from_email
-        sed_inplace "s|^MAIL_FROM_EMAIL=.*|MAIL_FROM_EMAIL=$from_email|" "$ENV_FILE"
-        
-        print_success "SMTP configured"
-    else
-        print_info "SMTP configuration skipped"
-    fi
-    
-    print_success "Environment configuration completed"
-    log "Environment configured for Atlas deployment"
-}
+    cat > "$ENV_FILE" << EOF
+# =============================================================================
+# GENERAL
+# =============================================================================
+COMPANY_NAME=$company_name
 
-configure_env_local() {
-    print_section "Configuring Local Deployment"
-    
-    ENV_FILE="$DEPLOYMENT_DIR/.env"
-    
-    # Check if .env already exists
-    if [ -f "$ENV_FILE" ]; then
-        print_warning ".env file already exists"
-        read -p "Do you want to overwrite it? [y/N]: " overwrite
-        if [[ ! $overwrite =~ ^[Yy]$ ]]; then
-            print_info "Using existing .env file"
-            log "Using existing .env file"
-            return
-        fi
-    fi
-    
-    # Copy from example
-    if [ ! -f "$DEPLOYMENT_DIR/.env.example" ]; then
-        print_error ".env.example not found in $DEPLOYMENT_DIR"
-        log_error ".env.example not found"
-        exit 1
-    fi
-    
-    cp "$DEPLOYMENT_DIR/.env.example" "$ENV_FILE"
-    print_success ".env file created"
-    
-    echo ""
-    echo "Let's configure your deployment. Press Enter to skip optional fields."
-    echo ""
-    
-    # Company Name
-    read -p "Company Name [My Company Inc.]: " company_name
-    company_name=${company_name:-"My Company Inc."}
-    sed_inplace "s/^COMPANY_NAME=.*/COMPANY_NAME=\"$company_name\"/" "$ENV_FILE"
-    
-    # MongoDB Password
-    echo ""
-    echo -e "${BOLD}MongoDB Configuration:${NC}"
-    read -p "Generate MongoDB password automatically? [Y/n]: " gen_mongo
-    if [[ ! $gen_mongo =~ ^[Nn]$ ]]; then
-        mongo_password=$(generate_password 24)
-        sed_inplace "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$mongo_password|" "$ENV_FILE"
-        print_success "MongoDB password generated automatically"
+# =============================================================================
+# SECURITY
+# =============================================================================
+JWT_SECRET=$jwt_secret
+JWT_EXPIRATION=900000
+JWT_REFRESH_EXPIRATION=604800000
+OPENAI_API_KEY=$openai_key
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+EOF
+
+    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
+        cat >> "$ENV_FILE" << EOF
+MONGODB_ATLAS_URI=$mongodb_uri
+EOF
     else
-        read -s -p "Enter MongoDB password: " mongo_password
-        echo ""
-        while [ ${#mongo_password} -lt 12 ]; do
-            print_error "Password must be at least 12 characters"
-            read -s -p "Enter MongoDB password: " mongo_password
-            echo ""
-        done
-        sed_inplace "s|^MONGODB_PASSWORD=.*|MONGODB_PASSWORD=$mongo_password|" "$ENV_FILE"
-        print_success "MongoDB password configured"
+        cat >> "$ENV_FILE" << EOF
+MONGODB_PASSWORD=$mongodb_password
+# MONGODB_URI: The \$ prevents shell expansion during file creation,
+# allowing Docker Compose to substitute MONGODB_PASSWORD at container runtime
+MONGODB_URI=mongodb://admin:\${MONGODB_PASSWORD}@mongodb:27017/alesqui_intelligence?authSource=admin
+MONGODB_DATABASE=alesqui_intelligence
+MONGODB_USER=admin
+MONGODB_AUTH_DB=admin
+EOF
     fi
-    
-    # JWT Secret
+
+    cat >> "$ENV_FILE" << EOF
+
+# =============================================================================
+# APPLICATION
+# =============================================================================
+PORT=8080
+FRONTEND_URL=$frontend_url
+
+# =============================================================================
+# EMAIL CONFIGURATION
+# =============================================================================
+SMTP_HOST=$smtp_host
+SMTP_PORT=$smtp_port
+SMTP_USER=$smtp_user
+SMTP_PASSWORD=$smtp_password
+MAIL_FROM_EMAIL=$from_email
+MAIL_FROM_NAME="$company_name - Intelligence"
+
+# =============================================================================
+# AUDIT LOGGING
+# =============================================================================
+AUDIT_RETENTION_DAYS=730
+
+# =============================================================================
+# ADMIN
+# =============================================================================
+ADMIN_EMAIL=$admin_email
+EOF
+
+    print_success "Configuration saved to $ENV_FILE"
+    log "Created .env file at $ENV_FILE"
     echo ""
-    echo -e "${BOLD}JWT Secret Generation:${NC}"
-    read -p "Generate JWT_SECRET automatically? [Y/n]: " gen_jwt
-    if [[ ! $gen_jwt =~ ^[Nn]$ ]]; then
-        jwt_secret=$(generate_jwt_secret)
-        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
-        print_success "JWT_SECRET generated automatically"
-    else
-        read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
-        while [ ${#jwt_secret} -lt 32 ]; do
-            print_error "JWT_SECRET must be at least 32 characters"
-            read -p "Enter JWT_SECRET (min 32 chars): " jwt_secret
-        done
-        sed_inplace "s|^JWT_SECRET=.*|JWT_SECRET=$jwt_secret|" "$ENV_FILE"
-        print_success "JWT_SECRET configured"
-    fi
-    
-    # OpenAI API Key
-    echo ""
-    echo -e "${BOLD}OpenAI Configuration:${NC}"
-    echo "Get your API key from: https://platform.openai.com/api-keys"
-    read -p "OpenAI API Key: " openai_key
-    while [ -z "$openai_key" ] || [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]] || ! [[ "$openai_key" =~ ^sk- ]] || [ ${#openai_key} -lt 20 ]; do
-        if [ -z "$openai_key" ]; then
-            print_error "OpenAI API Key cannot be empty"
-        elif [[ "$openai_key" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]]; then
-            print_error "Please replace with your actual API key"
-        elif ! [[ "$openai_key" =~ ^sk- ]]; then
-            print_error "OpenAI API Key must start with 'sk-'"
-        elif [ ${#openai_key} -lt 20 ]; then
-            print_error "OpenAI API Key is too short"
-        fi
-        read -p "OpenAI API Key: " openai_key
-    done
-    sed_inplace "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$openai_key|" "$ENV_FILE"
-    print_success "OpenAI API Key configured"
-    
-    # Frontend URL
-    echo ""
-    read -p "Frontend URL [http://localhost]: " frontend_url
-    frontend_url=${frontend_url:-"http://localhost"}
-    sed_inplace "s|^FRONTEND_URL=.*|FRONTEND_URL=$frontend_url|" "$ENV_FILE"
-    
-    # Admin Email
-    echo ""
-    echo -e "${BOLD}Initial Admin User (Optional):${NC}"
-    read -p "Admin Email [admin@company.com]: " admin_email
-    if [ -n "$admin_email" ] && [ "$admin_email" != "admin@company.com" ]; then
-        echo "INITIAL_ADMIN_EMAIL=$admin_email" >> "$ENV_FILE"
-    fi
-    
-    # SMTP Configuration (optional)
-    echo ""
-    echo -e "${BOLD}SMTP Configuration (Optional - press Enter to skip):${NC}"
-    read -p "SMTP Host [skip]: " smtp_host
-    if [ -n "$smtp_host" ] && [ "$smtp_host" != "skip" ]; then
-        sed_inplace "s|^SMTP_HOST=.*|SMTP_HOST=$smtp_host|" "$ENV_FILE"
-        
-        read -p "SMTP Port [587]: " smtp_port
-        smtp_port=${smtp_port:-587}
-        sed_inplace "s|^SMTP_PORT=.*|SMTP_PORT=$smtp_port|" "$ENV_FILE"
-        
-        read -p "SMTP User: " smtp_user
-        sed_inplace "s|^SMTP_USER=.*|SMTP_USER=$smtp_user|" "$ENV_FILE"
-        
-        read -s -p "SMTP Password: " smtp_password
-        echo ""
-        sed_inplace "s|^SMTP_PASSWORD=.*|SMTP_PASSWORD=$smtp_password|" "$ENV_FILE"
-        
-        read -p "From Email: " from_email
-        sed_inplace "s|^MAIL_FROM_EMAIL=.*|MAIL_FROM_EMAIL=$from_email|" "$ENV_FILE"
-        
-        print_success "SMTP configured"
-    else
-        print_info "SMTP configuration skipped"
-    fi
-    
-    print_success "Environment configuration completed"
-    log "Environment configured for Local deployment"
 }
 
 # =============================================================================
-# INSTALLATION
+# DEPLOYMENT
 # =============================================================================
 
-install_services() {
-    print_section "Starting Installation"
+run_deployment() {
+    print_section "Starting deployment..."
+    echo "This may take a few minutes to download Docker images."
+    echo ""
     
     cd "$DEPLOYMENT_DIR"
     
-    # Pull Docker images
-    echo ""
-    print_info "Pulling Docker images (this may take a few minutes)..."
-    log "Pulling Docker images"
-    
-    if $COMPOSE_CMD pull 2>&1 | tee -a "$INSTALL_LOG"; then
-        print_success "Docker images pulled successfully"
+    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
+        bash ../scripts/start-atlas.sh
     else
-        print_warning "Some images could not be pulled. Continuing with available images."
-        log "Warning: Image pull had issues"
+        bash ../scripts/start-local.sh
     fi
     
-    # Start services
-    echo ""
-    print_info "Starting services..."
-    log "Starting Docker services"
+    DEPLOY_EXIT_CODE=$?
+    cd "$REPO_DIR"
     
-    if $COMPOSE_CMD up -d 2>&1 | tee -a "$INSTALL_LOG"; then
-        print_success "Services started successfully"
-        log "Services started"
-    else
-        print_error "Failed to start services"
-        log_error "Failed to start services"
-        echo ""
-        echo "Check logs at: $INSTALL_LOG"
-        echo "Or run: cd $DEPLOYMENT_DIR && $COMPOSE_CMD logs"
-        exit 1
-    fi
+    return $DEPLOY_EXIT_CODE
 }
 
-perform_health_checks() {
-    print_section "Performing Health Checks"
+# =============================================================================
+# HEALTH CHECKS
+# =============================================================================
+
+health_check() {
+    print_section "Performing health checks..."
+    echo "Waiting for services to be ready..."
     
-    echo ""
-    print_info "Waiting for services to become healthy..."
-    print_info "This may take 2-3 minutes..."
-    echo ""
+    sleep 10
     
-    MAX_WAIT=180
-    ELAPSED=0
-    INTERVAL=5
-    
-    while [ $ELAPSED -lt $MAX_WAIT ]; do
-        # Check backend health
+    # Check backend
+    for i in {1..30}; do
         if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
             print_success "Backend is healthy"
             log "Backend health check passed"
             break
         fi
-        
-        echo -n "."
-        sleep $INTERVAL
-        ELAPSED=$((ELAPSED + INTERVAL))
+        if [ $i -eq 30 ]; then
+            print_warning "Backend health check timeout"
+            log "Backend health check timeout"
+            break
+        fi
+        sleep 2
     done
     
-    echo ""
-    
-    if [ $ELAPSED -ge $MAX_WAIT ]; then
-        print_warning "Services did not become healthy within $MAX_WAIT seconds"
-        print_info "This is normal on first startup. Check status with:"
-        echo "  cd $DEPLOYMENT_DIR && $COMPOSE_CMD ps"
-        echo "  cd $DEPLOYMENT_DIR && $COMPOSE_CMD logs -f"
-        log "Health check timeout (not critical)"
-    fi
-    
     # Check frontend
-    echo ""
     if curl -sf http://localhost > /dev/null 2>&1; then
         print_success "Frontend is accessible"
         log "Frontend health check passed"
     else
-        print_warning "Frontend may still be starting"
+        print_warning "Frontend not yet accessible"
         log "Frontend not yet accessible"
     fi
+    
+    echo ""
 }
 
-print_completion_message() {
+# =============================================================================
+# SUCCESS MESSAGE
+# =============================================================================
+
+show_success_message() {
     echo ""
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${GREEN}${BOLD}✅ Installation Complete!${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}   🎉 Installation Complete!${NC}"
+    echo -e "${GREEN}========================================${NC}"
     echo ""
-    
-    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
-        echo -e "${BOLD}Atlas Deployment${NC}"
-        echo ""
-        echo "Access your application:"
-        echo -e "  ${GREEN}Frontend:${NC}     http://localhost"
-        echo -e "  ${GREEN}Backend API:${NC}  http://localhost:8080"
-        echo -e "  ${GREEN}Health Check:${NC} http://localhost:8080/actuator/health"
-        echo -e "  ${GREEN}MongoDB:${NC}      Managed by Atlas"
-        echo ""
-        echo "MongoDB Atlas Dashboard:"
-        echo "  https://cloud.mongodb.com"
-    else
-        echo -e "${BOLD}Local Deployment${NC}"
-        echo ""
-        echo "Access your application:"
-        echo -e "  ${GREEN}Frontend:${NC}     http://localhost"
-        echo -e "  ${GREEN}Backend API:${NC}  http://localhost:8080"
-        echo -e "  ${GREEN}Health Check:${NC} http://localhost:8080/actuator/health"
-        echo -e "  ${GREEN}MongoDB:${NC}      localhost:27017"
-    fi
-    
+    echo "Access your application:"
+    echo -e "  ${BLUE}Frontend:${NC}     $frontend_url"
+    echo -e "  ${BLUE}Backend API:${NC}  http://localhost:8080"
+    echo -e "  ${BLUE}Health:${NC}       http://localhost:8080/actuator/health"
     echo ""
-    echo -e "${BOLD}Initial Admin Credentials:${NC}"
-    echo "Check the backend logs for the auto-generated password:"
-    echo "  cd $DEPLOYMENT_DIR && $COMPOSE_CMD logs backend | grep InitialAdmin"
+    echo "Next steps:"
+    echo "  1. Visit $frontend_url to access the application"
+    echo "  2. The system will create the initial admin account"
+    echo "  3. Check your email ($admin_email) for the activation link"
+    echo "  4. Activate your account and start using Alesqui Intelligence!"
     echo ""
-    echo -e "${YELLOW}⚠️  Important: Change the admin password after first login!${NC}"
-    
+    echo "Documentation:"
+    echo "  https://github.com/eloisa-alesqui/alesqui-intelligence-distribution"
     echo ""
-    echo -e "${BOLD}Next Steps:${NC}"
-    echo "  1. Access the frontend at http://localhost"
-    echo "  2. Login with the admin credentials from the logs"
-    echo "  3. Change your admin password"
-    echo "  4. Configure additional users and settings"
-    
-    echo ""
-    echo -e "${BOLD}Manage Services:${NC}"
-    echo "  View logs:       cd $DEPLOYMENT_DIR && $COMPOSE_CMD logs -f"
-    echo "  Stop services:   cd $DEPLOYMENT_DIR && $COMPOSE_CMD down"
-    echo "  Restart service: cd $DEPLOYMENT_DIR && $COMPOSE_CMD restart <service>"
-    
-    echo ""
-    echo -e "${BOLD}Documentation:${NC}"
-    echo "  Installation log:    $INSTALL_LOG"
-    echo "  Troubleshooting:     $REPO_DIR/TROUBLESHOOTING.md"
-    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
-        echo "  Atlas Guide:         $REPO_DIR/atlas/README.md"
-    else
-        echo "  Local Guide:         $REPO_DIR/local/README.md"
-    fi
-    
-    echo ""
-    echo -e "${GREEN}Thank you for choosing Alesqui Intelligence!${NC}"
+    echo "Need help? support@alesqui.com"
     echo ""
     
     log "Installation completed successfully"
@@ -795,8 +651,18 @@ print_completion_message() {
 # =============================================================================
 
 main() {
+    # Welcome
+    echo "========================================"
+    echo "   Alesqui Intelligence Installer"
+    echo "========================================"
+    echo ""
+    echo "This script will guide you through the installation"
+    echo "of Alesqui Intelligence on your system."
+    echo ""
+    
     # Initialize log
     echo "=== Alesqui Intelligence Installation ===" > "$INSTALL_LOG"
+    log "Installation started"
     
     # Check dependencies
     check_dependencies
@@ -805,20 +671,27 @@ main() {
     choose_deployment
     
     # Configure environment
-    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
-        configure_env_atlas
+    configure_environment
+    
+    # Create .env file
+    create_env_file
+    
+    # Run deployment
+    if run_deployment; then
+        health_check
+        show_success_message
     else
-        configure_env_local
+        echo ""
+        echo -e "${RED}========================================${NC}"
+        echo -e "${RED}   ✗ Installation Failed${NC}"
+        echo -e "${RED}========================================${NC}"
+        echo ""
+        echo "Please check the error messages above."
+        echo "For help, visit:"
+        echo "  https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/issues"
+        echo ""
+        exit 1
     fi
-    
-    # Install services
-    install_services
-    
-    # Health checks
-    perform_health_checks
-    
-    # Show completion message
-    print_completion_message
 }
 
 # Run main function

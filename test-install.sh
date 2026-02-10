@@ -97,10 +97,11 @@ echo -n "Test 8: Check required functions exist... "
 REQUIRED_FUNCTIONS=(
     "check_dependencies"
     "choose_deployment"
-    "configure_env_atlas"
-    "configure_env_local"
-    "install_services"
-    "perform_health_checks"
+    "configure_environment"
+    "create_env_file"
+    "run_deployment"
+    "health_check"
+    "show_success_message"
 )
 
 MISSING_FUNCTIONS=""
