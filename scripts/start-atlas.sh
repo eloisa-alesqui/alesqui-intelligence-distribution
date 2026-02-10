@@ -76,13 +76,21 @@ while IFS='=' read -r key value; do
     [[ "$key" =~ ^#.*$ ]] && continue
     [[ -z "$key" ]] && continue
     
-    # Remove leading/trailing whitespace and quotes
+    # Remove leading/trailing whitespace
     key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    
+    # Validate key format (alphanumeric and underscores only) to prevent command injection
+    if [[ ! "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Warning: Skipping invalid variable name: $key" >&2
+        continue
+    fi
+    
+    # Remove leading/trailing whitespace and quotes from value
     value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
     
     # Export the variable
     export "$key=$value"
-done < <(cat .env | sed 's/\r$//')  # Remove Windows CRLF
+done < <(sed 's/\r$//' .env)  # Remove Windows CRLF
 set +a
 
 # Validate required variables for Atlas deployment
