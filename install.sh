@@ -538,7 +538,7 @@ SMTP_PORT=$smtp_port
 SMTP_USER=$smtp_user
 SMTP_PASSWORD=$smtp_password
 MAIL_FROM_EMAIL=$from_email
-MAIL_FROM_NAME=$company_name - Intelligence
+MAIL_FROM_NAME="$company_name - Intelligence"
 
 # =============================================================================
 # AUDIT LOGGING
