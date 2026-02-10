@@ -14,8 +14,6 @@ set -u  # Exit on undefined variable
 # CONFIGURATION
 # =============================================================================
 
-INSTALL_LOG="/tmp/alesqui-install.log"
-
 # Early OS detection (needed for path handling)
 OS="$(uname -s)"
 case "$OS" in
@@ -24,6 +22,13 @@ case "$OS" in
     MINGW*|MSYS*|CYGWIN*)  OS="Windows";;
     *)          OS="Unknown";;
 esac
+
+# Set platform-specific temp directory for install log
+if [ "$OS" = "Windows" ]; then
+    INSTALL_LOG="${TEMP}/alesqui-install.log"
+else
+    INSTALL_LOG="/tmp/alesqui-install.log"
+fi
 
 # Detect if running from cloned repo or downloaded script
 if [ -d "$(dirname "${BASH_SOURCE[0]:-$0}")/.git" ] || git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
@@ -45,7 +50,7 @@ if [ "$FROM_CLONE" = false ]; then
     
     # Use /tmp on Linux/macOS, %TEMP% equivalent on Windows
     if [ "$OS" = "Windows" ]; then
-        CLONE_DIR="$TEMP/alesqui-intelligence-$(date +%s)"
+        CLONE_DIR="${TEMP}/alesqui-intelligence-$(date +%s)"
     else
         CLONE_DIR="/tmp/alesqui-intelligence-$(date +%s)"
     fi
@@ -388,10 +393,8 @@ sed_inplace() {
     
     if [ "$OS" = "macOS" ]; then
         sed -i '' "$pattern" "$file"
-    elif [ "$OS" = "Windows" ]; then
-        # Git Bash on Windows uses GNU sed (no empty string needed)
-        sed -i "$pattern" "$file"
     else
+        # Linux and Windows (Git Bash uses GNU sed)
         sed -i "$pattern" "$file"
     fi
 }
