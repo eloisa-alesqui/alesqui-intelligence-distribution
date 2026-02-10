@@ -513,6 +513,7 @@ EOF
     else
         cat >> "$ENV_FILE" << EOF
 MONGODB_PASSWORD=$mongodb_password
+# MONGODB_URI uses Docker Compose variable interpolation - \${MONGODB_PASSWORD} is substituted at runtime
 MONGODB_URI=mongodb://admin:\${MONGODB_PASSWORD}@mongodb:27017/alesqui_intelligence?authSource=admin
 MONGODB_DATABASE=alesqui_intelligence
 MONGODB_USER=admin
@@ -536,7 +537,7 @@ SMTP_PORT=$smtp_port
 SMTP_USER=$smtp_user
 SMTP_PASSWORD=$smtp_password
 MAIL_FROM_EMAIL=$from_email
-MAIL_FROM_NAME=$company_name - Intelligence
+MAIL_FROM_NAME=\"$company_name - Intelligence\"
 
 # =============================================================================
 # AUDIT LOGGING
@@ -597,6 +598,7 @@ health_check() {
         if [ $i -eq 30 ]; then
             print_warning "Backend health check timeout"
             log "Backend health check timeout"
+            break
         fi
         sleep 2
     done
