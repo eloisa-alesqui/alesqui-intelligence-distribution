@@ -68,16 +68,22 @@ echo ""
 echo -e "${BLUE}🔍 Checking configuration...${NC}"
 
 # Load .env file with Windows-compatible method
-# Use grep and export to handle Windows line endings and parsing issues
 # Export all variables from .env, handling Windows CRLF line endings
 set -a
-while IFS='=' read -r key value; do
+while IFS= read -r line; do
     # Skip comments and empty lines
-    [[ "$key" =~ ^#.*$ ]] && continue
-    [[ -z "$key" ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$line" ]] && continue
     
-    # Remove leading/trailing whitespace
-    key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    # Split on first '=' only to preserve '=' in values (e.g., connection strings)
+    key="${line%%=*}"
+    value="${line#*=}"
+    
+    # Trim whitespace from key
+    key=$(echo "$key" | xargs)
+    
+    # Skip if no key
+    [[ -z "$key" ]] && continue
     
     # Validate key format (alphanumeric and underscores only) to prevent command injection
     if [[ ! "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
@@ -85,8 +91,12 @@ while IFS='=' read -r key value; do
         continue
     fi
     
-    # Remove leading/trailing whitespace and quotes from value
-    value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+    # Trim whitespace and remove surrounding quotes from value
+    value=$(echo "$value" | xargs)
+    # Remove quotes (both single and double)
+    if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+        value="${BASH_REMATCH[1]}"
+    fi
     
     # Export the variable
     export "$key=$value"
