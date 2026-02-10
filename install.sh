@@ -14,12 +14,26 @@ set -u  # Exit on undefined variable
 # CONFIGURATION
 # =============================================================================
 
-INSTALL_LOG="/tmp/alesqui-install.log"
+# Early OS detection (needed for path handling)
+OS="$(uname -s)"
+case "$OS" in
+    Linux*)     OS="Linux";;
+    Darwin*)    OS="macOS";;
+    MINGW*|MSYS*|CYGWIN*)  OS="Windows";;
+    *)          OS="Unknown";;
+esac
+
+# Set platform-specific temp directory for install log
+if [ "$OS" = "Windows" ]; then
+    INSTALL_LOG="${TEMP}/alesqui-install.log"
+else
+    INSTALL_LOG="/tmp/alesqui-install.log"
+fi
 
 # Detect if running from cloned repo or downloaded script
-if [ -d "$(dirname "${BASH_SOURCE[0]}")/.git" ] || git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+if [ -d "$(dirname "${BASH_SOURCE[0]:-$0}")/.git" ] || git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
     # Running from cloned repository
-    REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+    REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
     FROM_CLONE=true
 else
     # Running from downloaded/curled script - need to clone first
@@ -34,7 +48,13 @@ if [ "$FROM_CLONE" = false ]; then
     echo "We'll clone it for you now..."
     echo ""
     
-    CLONE_DIR="/tmp/alesqui-intelligence-$(date +%s)"
+    # Use /tmp on Linux/macOS, %TEMP% equivalent on Windows
+    if [ "$OS" = "Windows" ]; then
+        CLONE_DIR="${TEMP}/alesqui-intelligence-$(date +%s)"
+    else
+        CLONE_DIR="/tmp/alesqui-intelligence-$(date +%s)"
+    fi
+    
     if command -v git &> /dev/null; then
         git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git "$CLONE_DIR"
         cd "$CLONE_DIR"
@@ -44,10 +64,17 @@ if [ "$FROM_CLONE" = false ]; then
         echo ""
         echo "Please either:"
         echo "  1. Install git and run this script again"
+        if [ "$OS" = "Windows" ]; then
+            echo "     Download from: https://git-scm.com/download/win"
+        fi
         echo "  2. Clone the repository manually:"
         echo "     git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git"
         echo "     cd alesqui-intelligence-distribution"
-        echo "     ./install.sh"
+        if [ "$OS" = "Windows" ]; then
+            echo "     bash install.sh"
+        else
+            echo "     ./install.sh"
+        fi
         exit 1
     fi
 fi
@@ -132,8 +159,16 @@ check_os() {
     
     OS="$(uname -s)"
     case "$OS" in
-        Linux*)     OS="Linux";;
-        Darwin*)    OS="macOS";;
+        Linux*)     
+            OS="Linux"
+            ;;
+        Darwin*)    
+            OS="macOS"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            OS="Windows"
+            print_info "Windows detected - Docker Desktop required"
+            ;;
         *)          
             print_error "Unsupported operating system: $OS"
             log_error "Unsupported OS: $OS"
@@ -141,6 +176,7 @@ check_os() {
             echo "This installer supports:"
             echo "  - Linux (Ubuntu, Debian, CentOS, RHEL, etc.)"
             echo "  - macOS"
+            echo "  - Windows (with Docker Desktop and Git Bash)"
             echo ""
             exit 1
             ;;
@@ -170,6 +206,31 @@ check_docker() {
         elif [ "$OS" = "macOS" ]; then
             echo "  # Install Docker Desktop for Mac"
             echo "  https://docs.docker.com/desktop/install/mac-install/"
+        elif [ "$OS" = "Windows" ]; then
+            echo "  # Install Docker Desktop for Windows"
+            echo "  https://docs.docker.com/desktop/install/windows-install/"
+            echo ""
+            echo "  Requirements:"
+            echo "  - Windows 10/11 Pro, Enterprise, or Education"
+            echo "  - WSL 2 backend (installed automatically by Docker Desktop)"
+            echo "  - Virtualization enabled in BIOS"
+        fi
+        echo ""
+        exit 1
+    fi
+    
+    # Check if Docker daemon is running (critical on Windows)
+    if ! docker info &> /dev/null; then
+        print_error "Docker is installed but not running"
+        echo ""
+        if [ "$OS" = "Windows" ]; then
+            echo "Please start Docker Desktop:"
+            echo "  1. Open Docker Desktop from Start Menu"
+            echo "  2. Wait for 'Docker Desktop is running' message"
+            echo "  3. Run this installer again"
+        else
+            echo "Please start the Docker daemon:"
+            echo "  sudo systemctl start docker"
         fi
         echo ""
         exit 1
@@ -188,7 +249,7 @@ check_docker() {
         print_warning "Docker version $DOCKER_VERSION is older than recommended (20.10+)"
         log "Docker version $DOCKER_VERSION (warning: old version)"
     else
-        print_success "Docker $DOCKER_VERSION is installed"
+        print_success "Docker $DOCKER_VERSION is installed and running"
         log "Docker version: $DOCKER_VERSION"
     fi
 }
@@ -196,35 +257,42 @@ check_docker() {
 check_docker_compose() {
     print_section "Checking Docker Compose Installation"
     
-    # Try docker compose (v2)
+    # Try docker compose (v2) - standard on Windows Docker Desktop
     if docker compose version &> /dev/null; then
         COMPOSE_CMD="docker compose"
         COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || docker compose version | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
-    # Try docker-compose (v1)
+    # Try docker-compose (v1) - older Linux installations
     elif command -v docker-compose &> /dev/null; then
         COMPOSE_CMD="docker-compose"
         COMPOSE_VERSION=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     else
-        print_error "Docker Compose is not installed"
+        print_error "Docker Compose is not available"
         log_error "Docker Compose not found"
         echo ""
-        echo "Docker Compose is required to run Alesqui Intelligence."
-        echo ""
-        echo "Installation instructions:"
-        echo ""
-        if [ "$OS" = "Linux" ]; then
+        
+        if [ "$OS" = "Windows" ]; then
+            echo "Docker Compose should be included with Docker Desktop."
+            echo ""
+            echo "Please ensure:"
+            echo "  1. Docker Desktop is fully installed"
+            echo "  2. Docker Desktop is running"
+            echo "  3. You've restarted your terminal after installing Docker Desktop"
+        elif [ "$OS" = "Linux" ]; then
+            echo "Docker Compose is required to run Alesqui Intelligence."
+            echo ""
+            echo "Installation instructions:"
             echo "  # Install Docker Compose v2"
             echo "  sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose"
             echo "  sudo chmod +x /usr/local/bin/docker-compose"
         elif [ "$OS" = "macOS" ]; then
-            echo "  # Docker Desktop for Mac includes Docker Compose"
-            echo "  # Make sure Docker Desktop is running"
+            echo "Docker Desktop for Mac includes Docker Compose"
+            echo "Make sure Docker Desktop is running"
         fi
         echo ""
         exit 1
     fi
     
-    print_success "Docker Compose $COMPOSE_VERSION is installed"
+    print_success "Docker Compose $COMPOSE_VERSION is available"
     log "Docker Compose version: $COMPOSE_VERSION (command: $COMPOSE_CMD)"
 }
 
@@ -326,6 +394,7 @@ sed_inplace() {
     if [ "$OS" = "macOS" ]; then
         sed -i '' "$pattern" "$file"
     else
+        # Linux and Windows (Git Bash uses GNU sed)
         sed -i "$pattern" "$file"
     fi
 }
@@ -631,6 +700,15 @@ show_success_message() {
     echo -e "  ${BLUE}Backend API:${NC}  http://localhost:8080"
     echo -e "  ${BLUE}Health:${NC}       http://localhost:8080/actuator/health"
     echo ""
+    
+    if [ "$OS" = "Windows" ]; then
+        echo "Windows-specific notes:"
+        echo "  • Docker Desktop must remain running"
+        echo "  • Services accessible from Windows browser at localhost"
+        echo "  • To stop: cd to deployment directory and run 'docker compose down'"
+        echo ""
+    fi
+    
     echo "Next steps:"
     echo "  1. Visit $frontend_url to access the application"
     echo "  2. The system will create the initial admin account"
@@ -666,6 +744,18 @@ main() {
     
     # Check dependencies
     check_dependencies
+    
+    # Add Windows-specific warning after OS detection
+    if [ "$OS" = "Windows" ]; then
+        echo ""
+        echo -e "${YELLOW}⚠️  Windows Installation Notes:${NC}"
+        echo "  • Docker Desktop for Windows is required"
+        echo "  • Make sure Docker Desktop is running before proceeding"
+        echo "  • This script must be run in Git Bash (not PowerShell/CMD)"
+        echo ""
+        read -p "Press Enter to continue or Ctrl+C to cancel..."
+        echo ""
+    fi
     
     # Choose deployment
     choose_deployment
