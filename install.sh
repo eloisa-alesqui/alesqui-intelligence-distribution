@@ -513,7 +513,8 @@ EOF
     else
         cat >> "$ENV_FILE" << EOF
 MONGODB_PASSWORD=$mongodb_password
-# MONGODB_URI uses Docker Compose variable interpolation - \${MONGODB_PASSWORD} is substituted at runtime
+# MONGODB_URI: The \$ prevents shell expansion during file creation,
+# allowing Docker Compose to substitute MONGODB_PASSWORD at container runtime
 MONGODB_URI=mongodb://admin:\${MONGODB_PASSWORD}@mongodb:27017/alesqui_intelligence?authSource=admin
 MONGODB_DATABASE=alesqui_intelligence
 MONGODB_USER=admin
@@ -537,7 +538,7 @@ SMTP_PORT=$smtp_port
 SMTP_USER=$smtp_user
 SMTP_PASSWORD=$smtp_password
 MAIL_FROM_EMAIL=$from_email
-MAIL_FROM_NAME=\"$company_name - Intelligence\"
+MAIL_FROM_NAME=$company_name - Intelligence
 
 # =============================================================================
 # AUDIT LOGGING
