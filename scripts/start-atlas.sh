@@ -67,54 +67,102 @@ echo ""
 # Check critical environment variables
 echo -e "${BLUE}🔍 Checking configuration...${NC}"
 
-# Source .env and check variables
+# Load .env file with Windows-compatible method
+# Use grep and export to handle Windows line endings and parsing issues
+# Export all variables from .env, handling Windows CRLF line endings
 set -a
-source .env
+while IFS='=' read -r key value; do
+    # Skip comments and empty lines
+    [[ "$key" =~ ^#.*$ ]] && continue
+    [[ -z "$key" ]] && continue
+    
+    # Remove leading/trailing whitespace and quotes
+    key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+    
+    # Export the variable
+    export "$key=$value"
+done < <(cat .env | sed 's/\r$//')  # Remove Windows CRLF
 set +a
 
-MISSING_VARS=""
+# Validate required variables for Atlas deployment
+MISSING_VARS=()
 
 # Check MongoDB Atlas URI
-if [ -z "$MONGODB_ATLAS_URI" ]; then
-    MISSING_VARS="${MISSING_VARS}\n  - MONGODB_ATLAS_URI (not set)"
+if [ -z "${MONGODB_ATLAS_URI:-}" ]; then
+    MISSING_VARS+=("MONGODB_ATLAS_URI (not set)")
 elif [[ "$MONGODB_ATLAS_URI" == *"username:password"* ]] || [[ "$MONGODB_ATLAS_URI" == *"cluster0.xxxxx"* ]]; then
-    MISSING_VARS="${MISSING_VARS}\n  - MONGODB_ATLAS_URI (not configured with real values)"
+    MISSING_VARS+=("MONGODB_ATLAS_URI (not configured with real values)")
 fi
 
 # Check JWT Secret
-if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" == "CHANGE_THIS_TO_A_RANDOM_SECURE_KEY_AT_LEAST_32_CHARS" ]; then
-    MISSING_VARS="${MISSING_VARS}\n  - JWT_SECRET"
+if [ -z "${JWT_SECRET:-}" ] || [ "$JWT_SECRET" == "CHANGE_THIS_TO_A_RANDOM_SECURE_KEY_AT_LEAST_32_CHARS" ]; then
+    MISSING_VARS+=("JWT_SECRET")
 fi
 
 # Check OpenAI API Key
-if [ -z "$OPENAI_API_KEY" ] || [ "$OPENAI_API_KEY" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]; then
-    MISSING_VARS="${MISSING_VARS}\n  - OPENAI_API_KEY"
+if [ -z "${OPENAI_API_KEY:-}" ] || [ "$OPENAI_API_KEY" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]; then
+    MISSING_VARS+=("OPENAI_API_KEY")
 fi
 
-if [ -n "$MISSING_VARS" ]; then
+# Check SMTP configuration
+if [ -z "${SMTP_HOST:-}" ]; then
+    MISSING_VARS+=("SMTP_HOST")
+fi
+
+if [ -z "${SMTP_USER:-}" ]; then
+    MISSING_VARS+=("SMTP_USER")
+fi
+
+if [ -z "${SMTP_PASSWORD:-}" ]; then
+    MISSING_VARS+=("SMTP_PASSWORD")
+fi
+
+# Check Admin Email
+if [ -z "${ADMIN_EMAIL:-}" ]; then
+    MISSING_VARS+=("ADMIN_EMAIL")
+fi
+
+# Check if any variables are missing
+if [ ${#MISSING_VARS[@]} -gt 0 ]; then
     echo -e "${RED}❌ Missing or invalid configuration:${NC}"
-    echo -e "${MISSING_VARS}"
+    echo ""
+    for var in "${MISSING_VARS[@]}"; do
+        echo "  - $var"
+    done
     echo ""
     echo "Please update your .env file with valid values."
     echo ""
-    echo "For MongoDB Atlas:"
-    echo "  1. Create a cluster at https://cloud.mongodb.com"
-    echo "  2. Create a database user"
-    echo "  3. Whitelist your server IP in Network Access"
-    echo "  4. Get your connection string and update MONGODB_ATLAS_URI"
-    echo ""
+    
+    if [[ " ${MISSING_VARS[@]} " =~ " MONGODB_ATLAS_URI " ]]; then
+        echo "For MongoDB Atlas:"
+        echo "  1. Create a cluster at https://cloud.mongodb.com"
+        echo "  2. Create a database user"
+        echo "  3. Whitelist your server IP in Network Access"
+        echo "  4. Get your connection string and update MONGODB_ATLAS_URI"
+        echo ""
+    fi
+    
     exit 1
 fi
+
+echo -e "${GREEN}✅ All required configuration variables are set${NC}"
+echo ""
 
 # Validate MongoDB Atlas URI format
 if [[ ! "$MONGODB_ATLAS_URI" =~ ^mongodb\+srv:// ]]; then
     echo -e "${YELLOW}⚠️  Warning: MONGODB_ATLAS_URI should start with 'mongodb+srv://' for Atlas${NC}"
     echo "   Current value: ${MONGODB_ATLAS_URI:0:50}..."
     echo ""
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+    # Check if stdin is a terminal (interactive mode)
+    if [ -t 0 ]; then
+        read -p "Continue anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    else
+        echo "Running in non-interactive mode, continuing..."
     fi
 fi
 
