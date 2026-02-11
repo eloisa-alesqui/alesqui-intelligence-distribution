@@ -5,6 +5,9 @@
 .env.local
 .env.*.local
 
+# Installation metadata (generated)
+.install-info
+
 # Docker
 docker-compose.override.yml
 

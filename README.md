@@ -110,6 +110,135 @@ See the [local setup guide](local/README.md#-initial-admin-user) or [Atlas setup
 
 ---
 
+## 📦 Post-Installation Management
+
+After installation, your Alesqui Intelligence instance is installed in a permanent directory (by default: `~/alesqui-intelligence`) and can be easily managed.
+
+### Installation Directory
+
+The installer saves your installation to a permanent location that persists across reboots:
+
+- **Default location:** `~/alesqui-intelligence`
+- **Custom location:** You can specify during installation
+- **Installation info:** Stored in `.install-info` file in the installation directory
+
+### Management Script
+
+Use the `manage.sh` script to easily control your installation:
+
+```bash
+cd ~/alesqui-intelligence  # or your custom installation directory
+
+# Start services
+./manage.sh start
+
+# Stop services
+./manage.sh stop
+
+# Restart services
+./manage.sh restart
+
+# View logs (all services)
+./manage.sh logs
+
+# View logs for specific service
+./manage.sh logs backend
+
+# Check installation and service status
+./manage.sh status
+
+# Create backup of configuration
+./manage.sh backup
+
+# Update to latest version
+./manage.sh update
+
+# Show help
+./manage.sh help
+```
+
+### Manual Docker Compose Management
+
+You can also manage services directly with Docker Compose:
+
+```bash
+cd ~/alesqui-intelligence
+
+# For Atlas deployment
+cd atlas && docker compose up -d      # Start services
+cd atlas && docker compose down       # Stop services
+cd atlas && docker compose logs -f    # View logs
+
+# For Local deployment
+cd local && docker compose up -d      # Start services
+cd local && docker compose down       # Stop services
+cd local && docker compose logs -f    # View logs
+```
+
+### Backup Your Configuration
+
+Create a backup of your configuration files:
+
+```bash
+# Using management script
+./manage.sh backup
+
+# Or using the backup script directly
+./scripts/backup.sh
+```
+
+Backups are stored in `~/alesqui-backups/` and include:
+- Environment configuration (`.env`)
+- Installation metadata (`.install-info`)
+
+### Update to Latest Version
+
+Update your installation to the latest version:
+
+```bash
+# Using management script (recommended - includes automatic backup)
+./manage.sh update
+
+# Or manually
+git pull origin main
+./manage.sh restart
+```
+
+### Uninstall
+
+To completely remove Alesqui Intelligence:
+
+```bash
+cd ~/alesqui-intelligence
+./scripts/uninstall.sh
+```
+
+The uninstall script will:
+1. Stop all Docker containers
+2. Remove containers and networks
+3. Optionally remove database volumes
+4. Optionally remove the installation directory
+
+### Troubleshooting Installation Issues
+
+If you encounter issues after installation:
+
+```bash
+# Check service status
+./manage.sh status
+
+# View logs for errors
+./manage.sh logs
+
+# Check Docker containers
+docker ps -a
+
+# Restart services
+./manage.sh restart
+```
+
+---
+
 ## 🗂️ Repository Structure
 
 ```

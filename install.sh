@@ -44,21 +44,44 @@ fi
 # If not running from cloned repo, we need to clone it
 if [ "$FROM_CLONE" = false ]; then
     echo ""
-    echo "This installer needs the full repository to proceed."
-    echo "We'll clone it for you now..."
+    print_info "Installation Directory Selection"
+    echo "Choose where to install Alesqui Intelligence."
     echo ""
     
-    # Use /tmp on Linux/macOS, %TEMP% equivalent on Windows
+    # Default based on OS
     if [ "$OS" = "Windows" ]; then
-        CLONE_DIR="${TEMP}/alesqui-intelligence-$(date +%s)"
+        DEFAULT_DIR="$HOME/alesqui-intelligence"
     else
-        CLONE_DIR="/tmp/alesqui-intelligence-$(date +%s)"
+        DEFAULT_DIR="$HOME/alesqui-intelligence"
     fi
     
+    read -p "Installation directory [default: $DEFAULT_DIR]: " INSTALL_DIR </dev/tty
+    INSTALL_DIR=${INSTALL_DIR:-"$DEFAULT_DIR"}
+    
+    # Expand ~ to home directory
+    INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+    
+    # Check if directory exists
+    if [ -d "$INSTALL_DIR" ]; then
+        print_warning "Directory $INSTALL_DIR already exists"
+        read -p "Overwrite? [y/N]: " overwrite </dev/tty
+        if [[ ! $overwrite =~ ^[Yy]$ ]]; then
+            echo "Installation cancelled."
+            exit 0
+        fi
+        rm -rf "$INSTALL_DIR"
+    fi
+    
+    # Create parent directory if needed
+    mkdir -p "$(dirname "$INSTALL_DIR")"
+    
     if command -v git &> /dev/null; then
-        git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git "$CLONE_DIR"
-        cd "$CLONE_DIR"
-        REPO_DIR="$CLONE_DIR"
+        git clone https://github.com/eloisa-alesqui/alesqui-intelligence-distribution.git "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
+        REPO_DIR="$INSTALL_DIR"
+        
+        print_success "Repository cloned to: $INSTALL_DIR"
+        log "Installation directory: $INSTALL_DIR"
     else
         echo "Error: git is not installed and is required to download the repository."
         echo ""
@@ -701,6 +724,25 @@ health_check() {
 # =============================================================================
 
 show_success_message() {
+    # Save installation info
+    # Get date with timezone (UTC if supported, local otherwise)
+    if date -u +"%Y-%m-%d %H:%M:%S UTC" > /dev/null 2>&1; then
+        INSTALL_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+    else
+        # Fall back to local time without UTC label
+        INSTALL_DATE=$(date +"%Y-%m-%d %H:%M:%S")
+    fi
+    
+    cat > "$REPO_DIR/.install-info" << EOF
+INSTALL_DATE="$INSTALL_DATE"
+INSTALL_DIR="$REPO_DIR"
+DEPLOYMENT_TYPE="$DEPLOYMENT_TYPE"
+OS="$OS"
+VERSION="1.0.0"
+EOF
+
+    echo "Installation info saved to: $REPO_DIR/.install-info"
+    
     echo ""
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}   🎉 Installation Complete!${NC}"
@@ -712,13 +754,36 @@ show_success_message() {
     echo -e "  ${BLUE}Health:${NC}       http://localhost:8080/actuator/health"
     echo ""
     
+    echo "Installation directory:"
+    echo -e "  ${BLUE}$REPO_DIR${NC}"
+    echo ""
+    
     if [ "$OS" = "Windows" ]; then
         echo "Windows-specific notes:"
         echo "  • Docker Desktop must remain running"
         echo "  • Services accessible from Windows browser at localhost"
-        echo "  • To stop: cd to deployment directory and run 'docker compose down'"
         echo ""
     fi
+    
+    echo "To manage your installation:"
+    echo -e "  ${BLUE}cd $REPO_DIR${NC}"
+    if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
+        echo "  cd atlas && docker compose logs      # View logs"
+        echo "  cd atlas && docker compose down      # Stop services"
+        echo "  cd atlas && docker compose up -d     # Start services"
+    else
+        echo "  cd local && docker compose logs      # View logs"
+        echo "  cd local && docker compose down      # Stop services"
+        echo "  cd local && docker compose up -d     # Start services"
+    fi
+    echo ""
+    echo "Or use the management script:"
+    echo "  ./manage.sh start    # Start services"
+    echo "  ./manage.sh stop     # Stop services"
+    echo "  ./manage.sh restart  # Restart services"
+    echo "  ./manage.sh logs     # View logs"
+    echo "  ./manage.sh status   # Check status"
+    echo ""
     
     echo "Next steps:"
     echo "  1. Visit $frontend_url to access the application"
