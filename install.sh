@@ -725,8 +725,13 @@ health_check() {
 
 show_success_message() {
     # Save installation info
-    # Try to get UTC date, fall back to local date if -u flag not supported
-    INSTALL_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || date +"%Y-%m-%d %H:%M:%S")
+    # Get date with timezone (UTC if supported, local otherwise)
+    if date -u +"%Y-%m-%d %H:%M:%S UTC" > /dev/null 2>&1; then
+        INSTALL_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+    else
+        # Fall back to local time without UTC label
+        INSTALL_DATE=$(date +"%Y-%m-%d %H:%M:%S")
+    fi
     
     cat > "$REPO_DIR/.install-info" << EOF
 INSTALL_DATE="$INSTALL_DATE"

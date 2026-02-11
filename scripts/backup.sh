@@ -16,10 +16,22 @@ mkdir -p "$BACKUP_DIR"
 echo "Creating backup from: $INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-tar -czf "$BACKUP_FILE" \
-    atlas/.env \
-    local/.env \
-    .install-info \
-    2>/dev/null || true
+# Build list of files to backup
+FILES_TO_BACKUP=""
+[ -f "atlas/.env" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP atlas/.env"
+[ -f "local/.env" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP local/.env"
+[ -f ".install-info" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP .install-info"
+
+if [ -z "$FILES_TO_BACKUP" ]; then
+    echo "⚠️  No configuration files found to backup"
+    exit 1
+fi
+
+tar -czf "$BACKUP_FILE" $FILES_TO_BACKUP
 
 echo "✅ Backup created: $BACKUP_FILE"
+echo ""
+echo "Backed up files:"
+for file in $FILES_TO_BACKUP; do
+    echo "  - $file"
+done

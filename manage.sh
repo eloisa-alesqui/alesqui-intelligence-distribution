@@ -78,7 +78,11 @@ cmd_status() {
     echo ""
     echo "Docker containers:"
     cd "$DEPLOY_DIR"
-    docker compose ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    if docker compose ps > /dev/null 2>&1; then
+        docker compose ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    else
+        echo "  (Unable to get container status - docker compose may not be available)"
+    fi
     cd - > /dev/null
     echo ""
     echo "Health check:"
@@ -101,16 +105,26 @@ cmd_backup() {
     BACKUP_FILE="$BACKUP_DIR/alesqui-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
     
     echo -e "${BLUE}Creating backup...${NC}"
-    tar -czf "$BACKUP_FILE" \
-        "$DEPLOY_DIR/.env" \
-        ".install-info" \
-        2>/dev/null || true
+    
+    # Build list of files to backup
+    FILES_TO_BACKUP=""
+    [ -f "atlas/.env" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP atlas/.env"
+    [ -f "local/.env" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP local/.env"
+    [ -f ".install-info" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP .install-info"
+    
+    if [ -z "$FILES_TO_BACKUP" ]; then
+        echo -e "${RED}⚠️  No configuration files found to backup${NC}"
+        return 1
+    fi
+    
+    tar -czf "$BACKUP_FILE" $FILES_TO_BACKUP
     
     echo -e "${GREEN}✅ Backup created: $BACKUP_FILE${NC}"
     echo ""
     echo "Backup contains:"
-    echo "  - Environment configuration (.env)"
-    echo "  - Installation info"
+    for file in $FILES_TO_BACKUP; do
+        echo "  - $file"
+    done
 }
 
 cmd_update() {
@@ -122,8 +136,28 @@ cmd_update() {
     
     # Pull latest changes from current branch
     echo "Pulling latest version..."
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    git pull origin "$CURRENT_BRANCH"
+    
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        echo -e "${RED}❌ Error: Not a git repository${NC}"
+        echo "The update command requires the installation to be a git repository."
+        return 1
+    fi
+    
+    # Get current branch
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
+        echo -e "${RED}❌ Error: Unable to determine current branch${NC}"
+        echo "You may be in a detached HEAD state. Please check out a branch first."
+        return 1
+    fi
+    
+    # Pull updates
+    if ! git pull origin "$CURRENT_BRANCH"; then
+        echo -e "${RED}❌ Error: Failed to pull updates${NC}"
+        echo "Please check your network connection and git configuration."
+        return 1
+    fi
     
     # Restart services
     cmd_restart
