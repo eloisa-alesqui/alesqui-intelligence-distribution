@@ -67,34 +67,87 @@ echo ""
 # Check critical environment variables
 echo -e "${BLUE}🔍 Checking configuration...${NC}"
 
-# Source .env and check variables
+# Load .env file with Windows-compatible method
+# Export all variables from .env, handling Windows CRLF line endings
 set -a
-source .env
+while IFS= read -r line; do
+    # Skip comments and empty lines
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$line" ]] && continue
+    
+    # Split on first '=' only to preserve '=' in values (e.g., connection strings)
+    key="${line%%=*}"
+    value="${line#*=}"
+    
+    # Trim whitespace from key
+    key=$(echo "$key" | xargs)
+    
+    # Skip if no key
+    [[ -z "$key" ]] && continue
+    
+    # Validate key format (alphanumeric and underscores only) to prevent command injection
+    if [[ ! "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Warning: Skipping invalid variable name: $key" >&2
+        continue
+    fi
+    
+    # Trim whitespace and remove surrounding quotes from value
+    value=$(echo "$value" | xargs)
+    # Remove quotes (both single and double)
+    if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+        value="${BASH_REMATCH[1]}"
+    fi
+    
+    # Export the variable
+    export "$key=$value"
+done < <(sed 's/\r$//' .env)  # Remove Windows CRLF
 set +a
 
-MISSING_VARS=""
+# Validate required variables for Local deployment
+MISSING_VARS=()
 
-if [ -z "$MONGODB_PASSWORD" ] || [ "$MONGODB_PASSWORD" == "CHANGE_THIS_TO_A_SECURE_PASSWORD" ]; then
-    MISSING_VARS="${MISSING_VARS}\n  - MONGODB_PASSWORD"
+if [ -z "${MONGODB_PASSWORD:-}" ] || [ "$MONGODB_PASSWORD" == "CHANGE_THIS_TO_A_SECURE_PASSWORD" ]; then
+    MISSING_VARS+=("MONGODB_PASSWORD")
 fi
 
-if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" == "CHANGE_THIS_TO_A_RANDOM_SECURE_KEY_AT_LEAST_32_CHARS" ]; then
-    MISSING_VARS="${MISSING_VARS}\n  - JWT_SECRET"
+if [ -z "${JWT_SECRET:-}" ] || [ "$JWT_SECRET" == "CHANGE_THIS_TO_A_RANDOM_SECURE_KEY_AT_LEAST_32_CHARS" ]; then
+    MISSING_VARS+=("JWT_SECRET")
 fi
 
-if [ -z "$OPENAI_API_KEY" ] || [ "$OPENAI_API_KEY" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]; then
-    MISSING_VARS="${MISSING_VARS}\n  - OPENAI_API_KEY"
+if [ -z "${OPENAI_API_KEY:-}" ] || [ "$OPENAI_API_KEY" == "sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" ]; then
+    MISSING_VARS+=("OPENAI_API_KEY")
 fi
 
-if [ -n "$MISSING_VARS" ]; then
+if [ -z "${SMTP_HOST:-}" ]; then
+    MISSING_VARS+=("SMTP_HOST")
+fi
+
+if [ -z "${SMTP_USER:-}" ]; then
+    MISSING_VARS+=("SMTP_USER")
+fi
+
+if [ -z "${SMTP_PASSWORD:-}" ]; then
+    MISSING_VARS+=("SMTP_PASSWORD")
+fi
+
+if [ -z "${ADMIN_EMAIL:-}" ]; then
+    MISSING_VARS+=("ADMIN_EMAIL")
+fi
+
+# Check if any variables are missing
+if [ ${#MISSING_VARS[@]} -gt 0 ]; then
     echo -e "${RED}❌ Missing or invalid configuration:${NC}"
-    echo -e "${MISSING_VARS}"
+    echo ""
+    for var in "${MISSING_VARS[@]}"; do
+        echo "  - $var"
+    done
     echo ""
     echo "Please update your .env file with valid values."
+    echo ""
     exit 1
 fi
 
-echo -e "${GREEN}✅ Configuration validated${NC}"
+echo -e "${GREEN}✅ All required configuration variables are set${NC}"
 echo ""
 
 # Pull latest Docker images

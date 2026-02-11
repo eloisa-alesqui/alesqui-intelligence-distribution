@@ -747,14 +747,28 @@ main() {
     
     # Add Windows-specific warning after OS detection
     if [ "$OS" = "Windows" ]; then
-        echo ""
-        echo -e "${YELLOW}⚠️  Windows Installation Notes:${NC}"
-        echo "  • Docker Desktop for Windows is required"
-        echo "  • Make sure Docker Desktop is running before proceeding"
-        echo "  • This script must be run in Git Bash (not PowerShell/CMD)"
-        echo ""
-        read -p "Press Enter to continue or Ctrl+C to cancel..."
-        echo ""
+        # Check if stdin is a pipe (non-interactive)
+        if [ ! -t 0 ]; then
+            # Running from pipe (curl | bash), skip interactive prompt
+            echo ""
+            echo -e "${YELLOW}⚠️  Windows Installation Notes:${NC}"
+            echo "  • Docker Desktop for Windows is required"
+            echo "  • Make sure Docker Desktop is running before proceeding"
+            echo "  • This script must be run in Git Bash (not PowerShell/CMD)"
+            echo ""
+            echo "Continuing with installation..."
+            echo ""
+        else
+            # Running interactively, ask for confirmation
+            echo ""
+            echo -e "${YELLOW}⚠️  Windows Installation Notes:${NC}"
+            echo "  • Docker Desktop for Windows is required"
+            echo "  • Make sure Docker Desktop is running before proceeding"
+            echo "  • This script must be run in Git Bash (not PowerShell/CMD)"
+            echo ""
+            read -p "Press Enter to continue or Ctrl+C to cancel..."
+            echo ""
+        fi
     fi
     
     # Choose deployment
