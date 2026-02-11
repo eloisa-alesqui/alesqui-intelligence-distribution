@@ -725,8 +725,11 @@ health_check() {
 
 show_success_message() {
     # Save installation info
+    # Try to get UTC date, fall back to local date if -u flag not supported
+    INSTALL_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || date +"%Y-%m-%d %H:%M:%S")
+    
     cat > "$REPO_DIR/.install-info" << EOF
-INSTALL_DATE="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+INSTALL_DATE="$INSTALL_DATE"
 INSTALL_DIR="$REPO_DIR"
 DEPLOYMENT_TYPE="$DEPLOYMENT_TYPE"
 OS="$OS"

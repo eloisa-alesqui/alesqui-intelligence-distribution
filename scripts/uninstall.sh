@@ -9,7 +9,13 @@ YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+# Determine script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 echo -e "${YELLOW}⚠️  Alesqui Intelligence Uninstaller${NC}"
+echo ""
+echo "Installation directory: $INSTALL_DIR"
 echo ""
 echo "This will:"
 echo "  - Stop all Docker containers"
@@ -27,19 +33,26 @@ fi
 # Stop services
 echo ""
 echo "Stopping services..."
-cd atlas 2>/dev/null && docker compose down || true
-cd ../local 2>/dev/null && docker compose down || true
+if [ -d "$INSTALL_DIR/atlas" ]; then
+    cd "$INSTALL_DIR/atlas" && docker compose down 2>/dev/null || true
+fi
+if [ -d "$INSTALL_DIR/local" ]; then
+    cd "$INSTALL_DIR/local" && docker compose down 2>/dev/null || true
+fi
 
 read -p "Remove database data (volumes)? [y/N]: " remove_volumes
 if [[ $remove_volumes =~ ^[Yy]$ ]]; then
-    cd atlas 2>/dev/null && docker compose down -v || true
-    cd ../local 2>/dev/null && docker compose down -v || true
+    if [ -d "$INSTALL_DIR/atlas" ]; then
+        cd "$INSTALL_DIR/atlas" && docker compose down -v 2>/dev/null || true
+    fi
+    if [ -d "$INSTALL_DIR/local" ]; then
+        cd "$INSTALL_DIR/local" && docker compose down -v 2>/dev/null || true
+    fi
     echo -e "${GREEN}✅ Volumes removed${NC}"
 fi
 
 read -p "Remove installation directory? [y/N]: " remove_dir
 if [[ $remove_dir =~ ^[Yy]$ ]]; then
-    INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     echo "Removing: $INSTALL_DIR"
     cd ~
     rm -rf "$INSTALL_DIR"

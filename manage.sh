@@ -77,7 +77,9 @@ cmd_status() {
     echo "Installed: $INSTALL_DATE"
     echo ""
     echo "Docker containers:"
-    docker ps --filter "name=alesqui" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    cd "$DEPLOY_DIR"
+    docker compose ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    cd - > /dev/null
     echo ""
     echo "Health check:"
     if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
@@ -118,9 +120,10 @@ cmd_update() {
     # Backup current config
     cmd_backup
     
-    # Pull latest changes
+    # Pull latest changes from current branch
     echo "Pulling latest version..."
-    git pull origin main
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    git pull origin "$CURRENT_BRANCH"
     
     # Restart services
     cmd_restart
