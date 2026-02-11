@@ -726,11 +726,11 @@ health_check() {
 show_success_message() {
     # Save installation info
     cat > "$REPO_DIR/.install-info" << EOF
-INSTALL_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-INSTALL_DIR=$REPO_DIR
-DEPLOYMENT_TYPE=$DEPLOYMENT_TYPE
-OS=$OS
-VERSION=1.0.0
+INSTALL_DATE="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+INSTALL_DIR="$REPO_DIR"
+DEPLOYMENT_TYPE="$DEPLOYMENT_TYPE"
+OS="$OS"
+VERSION="1.0.0"
 EOF
 
     echo "Installation info saved to: $REPO_DIR/.install-info"
