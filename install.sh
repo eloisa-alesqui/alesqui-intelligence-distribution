@@ -357,7 +357,7 @@ choose_deployment() {
     echo ""
     
     while true; do
-        read -p "Enter your choice [1-2]: " choice
+        read -p "Enter your choice [1-2]: " choice </dev/tty
         case $choice in
             1)
                 DEPLOYMENT_TYPE="atlas"
@@ -430,7 +430,7 @@ configure_environment() {
     echo ""
     
     # Company Name
-    read -p "Company Name [default: My Company]: " company_name
+    read -p "Company Name [default: My Company]: " company_name </dev/tty
     company_name=${company_name:-"My Company"}
     log "Company name: $company_name"
     
@@ -441,16 +441,16 @@ configure_environment() {
         echo "You need a MongoDB Atlas connection string."
         echo "Get one at: https://cloud.mongodb.com"
         echo ""
-        read -p "Enter MongoDB Atlas URI (mongodb+srv://...): " mongodb_uri
+        read -p "Enter MongoDB Atlas URI (mongodb+srv://...): " mongodb_uri </dev/tty
         while [[ ! $mongodb_uri =~ ^mongodb\+srv:// ]]; do
             print_error "Invalid URI. Must start with mongodb+srv://"
-            read -p "Enter MongoDB Atlas URI: " mongodb_uri
+            read -p "Enter MongoDB Atlas URI: " mongodb_uri </dev/tty
         done
         log "MongoDB Atlas URI configured"
     else
         echo ""
         print_info "MongoDB Configuration (Local):"
-        read -p "Enter MongoDB password (for local container) [default: mongopassword]: " mongodb_password
+        read -p "Enter MongoDB password (for local container) [default: mongopassword]: " mongodb_password </dev/tty
         mongodb_password=${mongodb_password:-mongopassword}
         log "MongoDB password configured"
     fi
@@ -459,12 +459,12 @@ configure_environment() {
     echo ""
     print_info "JWT Secret Configuration:"
     echo "A JWT secret is required for authentication token signing."
-    read -p "Generate JWT secret automatically? [Y/n]: " generate_jwt
+    read -p "Generate JWT secret automatically? [Y/n]: " generate_jwt </dev/tty
     if [[ $generate_jwt =~ ^[Nn]$ ]]; then
-        read -p "Enter your JWT secret (minimum 32 characters): " jwt_secret
+        read -p "Enter your JWT secret (minimum 32 characters): " jwt_secret </dev/tty
         while [ ${#jwt_secret} -lt 32 ]; do
             print_error "JWT secret must be at least 32 characters"
-            read -p "Enter JWT secret: " jwt_secret
+            read -p "Enter JWT secret: " jwt_secret </dev/tty
         done
     else
         jwt_secret=$(generate_jwt_secret)
@@ -476,10 +476,10 @@ configure_environment() {
     echo ""
     print_info "OpenAI API Key:"
     echo "Get your API key at: https://platform.openai.com/api-keys"
-    read -p "Enter OpenAI API key (sk-...): " openai_key
+    read -p "Enter OpenAI API key (sk-...): " openai_key </dev/tty
     while [[ ! $openai_key =~ ^sk- ]]; do
         print_error "Invalid API key. Must start with 'sk-'"
-        read -p "Enter OpenAI API key: " openai_key
+        read -p "Enter OpenAI API key: " openai_key </dev/tty
     done
     log "OpenAI API key configured"
     
@@ -488,50 +488,50 @@ configure_environment() {
     print_info "SMTP Configuration (REQUIRED for user account activation):"
     echo "Supported providers: Gmail, SendGrid, Mailgun, Amazon SES, or company SMTP"
     echo ""
-    read -p "SMTP Host (e.g., smtp.gmail.com): " smtp_host
+    read -p "SMTP Host (e.g., smtp.gmail.com): " smtp_host </dev/tty
     while [ -z "$smtp_host" ]; do
         print_error "SMTP Host is required"
-        read -p "SMTP Host (e.g., smtp.gmail.com): " smtp_host
+        read -p "SMTP Host (e.g., smtp.gmail.com): " smtp_host </dev/tty
     done
     
-    read -p "SMTP Port [default: 587]: " smtp_port
+    read -p "SMTP Port [default: 587]: " smtp_port </dev/tty
     smtp_port=${smtp_port:-587}
     
-    read -p "SMTP User (email address): " smtp_user
+    read -p "SMTP User (email address): " smtp_user </dev/tty
     while [ -z "$smtp_user" ]; do
         print_error "SMTP User is required"
-        read -p "SMTP User (email address): " smtp_user
+        read -p "SMTP User (email address): " smtp_user </dev/tty
     done
     
-    read -sp "SMTP Password: " smtp_password
+    read -sp "SMTP Password: " smtp_password </dev/tty
     echo ""
     while [ -z "$smtp_password" ]; do
         print_error "SMTP Password is required"
-        read -sp "SMTP Password: " smtp_password
+        read -sp "SMTP Password: " smtp_password </dev/tty
         echo ""
     done
     
-    read -p "Email 'From' address [default: $smtp_user]: " from_email
+    read -p "Email 'From' address [default: $smtp_user]: " from_email </dev/tty
     from_email=${from_email:-$smtp_user}
     log "SMTP configured"
     
     # Frontend URL
     echo ""
     if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
-        read -p "Frontend URL [default: https://intelligence.yourcompany.com]: " frontend_url
+        read -p "Frontend URL [default: https://intelligence.yourcompany.com]: " frontend_url </dev/tty
         frontend_url=${frontend_url:-"https://intelligence.yourcompany.com"}
     else
-        read -p "Frontend URL [default: http://localhost]: " frontend_url
+        read -p "Frontend URL [default: http://localhost]: " frontend_url </dev/tty
         frontend_url=${frontend_url:-"http://localhost"}
     fi
     log "Frontend URL: $frontend_url"
     
     # Admin Email (REQUIRED)
     echo ""
-    read -p "Admin email address: " admin_email
+    read -p "Admin email address: " admin_email </dev/tty
     while [[ ! $admin_email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; do
         print_error "Invalid email format"
-        read -p "Admin email address: " admin_email
+        read -p "Admin email address: " admin_email </dev/tty
     done
     log "Admin email: $admin_email"
     
@@ -548,7 +548,7 @@ create_env_file() {
     # Check if .env already exists
     if [ -f "$ENV_FILE" ]; then
         print_warning ".env file already exists"
-        read -p "Do you want to overwrite it? [y/N]: " overwrite
+        read -p "Do you want to overwrite it? [y/N]: " overwrite </dev/tty
         if [[ ! $overwrite =~ ^[Yy]$ ]]; then
             print_info "Using existing .env file"
             log "Using existing .env file"
@@ -619,6 +619,17 @@ AUDIT_RETENTION_DAYS=730
 # =============================================================================
 ADMIN_EMAIL=$admin_email
 EOF
+
+    # Normalize line endings (remove CRLF on Windows)
+    if [ "$OS" = "Windows" ]; then
+        # Use dos2unix if available, otherwise use sed
+        if command -v dos2unix &> /dev/null; then
+            dos2unix "$ENV_FILE" 2>/dev/null || true
+        else
+            # Fallback: use sed to remove CR characters
+            sed -i 's/\r$//' "$ENV_FILE" 2>/dev/null || true
+        fi
+    fi
 
     print_success "Configuration saved to $ENV_FILE"
     log "Created .env file at $ENV_FILE"
@@ -766,7 +777,7 @@ main() {
             echo "  • Make sure Docker Desktop is running before proceeding"
             echo "  • This script must be run in Git Bash (not PowerShell/CMD)"
             echo ""
-            read -p "Press Enter to continue or Ctrl+C to cancel..."
+            read -p "Press Enter to continue or Ctrl+C to cancel..." </dev/tty
             echo ""
         fi
     fi
