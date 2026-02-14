@@ -12,7 +12,7 @@ jobs:
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,12 +31,12 @@ jobs:
         run: |
           VERSION="${{ steps.get_version.outputs.version }}"
           PACKAGE_NAME="alesqui-intelligence-${VERSION}.tar.gz"
-          
+
           echo "Creating distribution package: $PACKAGE_NAME"
-          
+
           # Create temporary directory for clean packaging
           mkdir -p dist
-          
+
           # Copy distribution files (exclude .git, .github, tests, etc.)
           tar -czf "dist/$PACKAGE_NAME" \
             --exclude='.git' \
@@ -55,17 +55,17 @@ jobs:
             README.md \
             INSTALLATION.md \
             CONFIGURATION.md
-          
+
           # Also create a generic "latest" version
           cp "dist/$PACKAGE_NAME" "dist/alesqui-intelligence.tar.gz"
-          
+
           # Calculate checksums
           cd dist
           sha256sum *.tar.gz > checksums.txt
           cd ..
-          
+
           echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
-          
+
           # Show package contents
           echo "Package contents:"
           tar -tzf "dist/$PACKAGE_NAME" | head -20
@@ -74,10 +74,10 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ steps.get_version.outputs.version }}"
-          
+
           # Get the previous tag
           PREVIOUS_TAG=$(git describe --abbrev=0 --tags ${VERSION}^ 2>/dev/null || echo "")
-          
+
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "First release - generating full changelog"
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
@@ -85,65 +85,65 @@ jobs:
             echo "Generating changelog from $PREVIOUS_TAG to $VERSION"
             CHANGELOG=$(git log ${PREVIOUS_TAG}..${VERSION} --pretty=format:"- %s (%h)" --no-merges)
           fi
-          
+
           # Save changelog to file
           cat > release-notes.md << EOF
           ## 🎉 Alesqui Intelligence $VERSION
-          
+
           Professional AI-powered API intelligence platform.
-          
+
           ### 📦 Installation
-          
+
           **Quick Install (Recommended):**
           \`\`\`bash
           curl -fsSL https://get.alesqui.com/install.sh | bash
           \`\`\`
-          
+
           **Manual Installation:**
           \`\`\`bash
           # Download
           wget https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/releases/download/${VERSION}/alesqui-intelligence.tar.gz
-          
+
           # Extract
           tar -xzf alesqui-intelligence.tar.gz
           cd alesqui-intelligence
-          
+
           # Install
           ./install.sh
           \`\`\`
-          
+
           ### 📋 What's Included
-          
+
           - ✅ Atlas deployment (MongoDB Atlas)
           - ✅ Local deployment (Self-hosted MongoDB)
           - ✅ Interactive installation wizard
           - ✅ Management scripts (\`manage.sh\`)
           - ✅ Comprehensive documentation
           - ✅ Docker-based deployment
-          
+
           ### 🔒 Verification
-          
+
           Verify the download integrity:
           \`\`\`bash
           sha256sum -c checksums.txt
           \`\`\`
-          
+
           ### 📝 Changes in this Release
-          
+
           $CHANGELOG
-          
+
           ### 📚 Documentation
-          
+
           - [Installation Guide](https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/blob/main/INSTALLATION.md)
           - [Configuration Reference](https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/blob/main/CONFIGURATION.md)
           - [README](https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/blob/main/README.md)
-          
+
           ### 🐛 Report Issues
-          
+
           Found a bug? [Open an issue](https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/issues/new)
-          
+
           ### 💬 Support
-          
+
           - Email: support@alesqui.com
           - Documentation: [GitHub Repository](https://github.com/eloisa-alesqui/alesqui-intelligence-distribution)
           EOF
