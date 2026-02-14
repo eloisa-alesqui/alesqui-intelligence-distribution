@@ -616,7 +616,6 @@ EOF
     if [ "$DEPLOYMENT_TYPE" = "atlas" ]; then
         cat >> "$ENV_FILE" << EOF
 MONGODB_ATLAS_URI=$mongodb_uri
-MONGODB_DATABASE=$extracted_db
 EOF
     else
         cat >> "$ENV_FILE" << EOF
