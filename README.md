@@ -524,7 +524,7 @@ docker-compose ps
 
 5. Check which database it's connecting to:
    ```bash
-   docker logs alesqui-backend | grep -i "mongo\|database"
+   docker logs alesqui-backend | grep -iE 'mongo|database'
    ```
 
 **For more detailed troubleshooting:** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

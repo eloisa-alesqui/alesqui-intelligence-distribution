@@ -474,9 +474,17 @@ configure_environment() {
         extracted_db=""
         if [[ $mongodb_uri =~ \.net/([^?]+) ]]; then
             extracted_db="${BASH_REMATCH[1]}"
-            print_info "Database name from URI: $extracted_db"
-            echo "The application will connect to the '$extracted_db' database."
-            echo ""
+            # Check if extracted database name is not empty
+            if [[ -n "$extracted_db" ]]; then
+                print_info "Database name from URI: $extracted_db"
+                echo "The application will connect to the '$extracted_db' database."
+                echo ""
+            else
+                print_warning "Could not extract database name from URI."
+                echo "Make sure your URI includes the database name after .mongodb.net/"
+                echo "Example: mongodb+srv://user:pass@cluster.net/DATABASE_NAME?options"
+                echo ""
+            fi
         else
             print_warning "Could not extract database name from URI."
             echo "Make sure your URI includes the database name after .mongodb.net/"
