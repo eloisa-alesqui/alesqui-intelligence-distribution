@@ -61,7 +61,7 @@ jobs:
 
           # Calculate checksums
           cd dist
-          sha256sum *.tar.gz > checksums.txt
+          sha256sum "$PACKAGE_NAME" alesqui-intelligence.tar.gz > checksums.txt
           cd ..
 
           echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
@@ -96,7 +96,7 @@ jobs:
 
           **Quick Install (Recommended):**
           \`\`\`bash
-          curl -fsSL https://get.alesqui.com/install.sh | bash
+          curl -fsSL https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh | bash
           \`\`\`
 
           **Manual Installation:**

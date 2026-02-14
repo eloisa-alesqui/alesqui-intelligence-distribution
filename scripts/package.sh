@@ -64,7 +64,13 @@ fi
 
 # Generate checksums
 cd "$DIST_DIR"
-sha256sum *.tar.gz > checksums.txt
+if [ "$VERSION" != "${VERSION#dev-}" ]; then
+    # Development build - only checksum the versioned file
+    sha256sum "$PACKAGE_NAME" > checksums.txt
+else
+    # Release build - checksum both versioned and latest
+    sha256sum "$PACKAGE_NAME" alesqui-intelligence.tar.gz > checksums.txt
+fi
 cd ..
 
 echo ""
