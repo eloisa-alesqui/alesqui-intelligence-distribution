@@ -130,8 +130,8 @@ if [ -z "${SMTP_PASSWORD:-}" ]; then
     MISSING_VARS+=("SMTP_PASSWORD")
 fi
 
-if [ -z "${ADMIN_EMAIL:-}" ]; then
-    MISSING_VARS+=("ADMIN_EMAIL")
+if [ -z "${INITIAL_ADMIN_EMAIL:-}" ]; then
+    MISSING_VARS+=("INITIAL_ADMIN_EMAIL")
 fi
 
 # Check if any variables are missing
