@@ -26,15 +26,48 @@ The installer will:
 - ✅ Deploy all services
 - ✅ Perform health checks
 
-**Alternative:** [Download manually](#-installation) and follow the installation guide.
+**Alternative:** [Download manually](#-installation-methods) and follow the installation guide.
 
 ---
 
-## 📋 Manual Installation
+## 📦 Installation Methods
 
-If you prefer manual installation or need more control:
+### Method 1: Quick Install (Recommended)
 
-### Option 1: Quick Install Script
+Deploy Alesqui Intelligence with the automated installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/eloisa-alesqui/alesqui-intelligence-distribution/main/install.sh | bash
+```
+
+### Method 2: Download Release Package
+
+Download the latest stable release:
+
+```bash
+# Download
+wget https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/releases/latest/download/alesqui-intelligence.tar.gz
+
+# Verify integrity (optional but recommended)
+wget https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/releases/latest/download/checksums.txt
+sha256sum -c checksums.txt
+
+# Extract
+tar -xzf alesqui-intelligence.tar.gz
+cd alesqui-intelligence
+
+# Install
+./install.sh
+```
+
+Or download a specific version:
+
+```bash
+VERSION=v1.0.0
+wget https://github.com/eloisa-alesqui/alesqui-intelligence-distribution/releases/download/${VERSION}/alesqui-intelligence.tar.gz
+```
+
+### Method 3: Clone Repository
 
 Clone the repository and run the installer:
 
@@ -44,11 +77,13 @@ cd alesqui-intelligence-distribution
 ./install.sh
 ```
 
-### Option 2: Manual Setup
+---
+
+## 📋 Deployment Options
 
 Choose your deployment option:
 
-#### Option A: Local MongoDB (Recommended for Development)
+### Local MongoDB (Recommended for Development)
 
 ```bash
 # Clone repository
@@ -68,7 +103,7 @@ The script will:
 
 📖 **[Full Local Setup Guide →](local/README.md)**
 
-### Option B: MongoDB Atlas (Recommended for Production)
+### MongoDB Atlas (Recommended for Production)
 
 ```bash
 # Clone repository
