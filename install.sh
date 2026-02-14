@@ -30,6 +30,67 @@ else
     INSTALL_LOG="/tmp/alesqui-install.log"
 fi
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*" >> "$INSTALL_LOG"
+}
+
+log_error() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: $*" >> "$INSTALL_LOG"
+}
+
+# =============================================================================
+# UTILITY FUNCTIONS
+# =============================================================================
+
+print_header() {
+    echo ""
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${CYAN}     _    _                 _      ${NC}"
+    echo -e "${CYAN}    / \\  | | ___  ___  __ _(_)     ${NC}"
+    echo -e "${CYAN}   / _ \\ | |/ _ \\/ __|/ _\` | |     ${NC}"
+    echo -e "${CYAN}  / ___ \\| |  __/\\__ \\ (_| | |     ${NC}"
+    echo -e "${CYAN} /_/   \\_\\_|\\___||___/\\__, |_|     ${NC}"
+    echo -e "${CYAN}                         |_|       ${NC}"
+    echo -e "${CYAN}${BOLD}   Intelligence Distribution${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+}
+
+print_section() {
+    echo ""
+    echo -e "${BLUE}▶ $1${NC}"
+    echo ""
+}
+
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_info() {
+    echo -e "${CYAN}ℹ️  $1${NC}"
+}
+
 # Detect if running from cloned repo or downloaded script
 if [ -d "$(dirname "${BASH_SOURCE[0]:-$0}")/.git" ] || git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
     # Running from cloned repository
@@ -101,67 +162,6 @@ if [ "$FROM_CLONE" = false ]; then
         exit 1
     fi
 fi
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m' # No Color
-
-# =============================================================================
-# LOGGING
-# =============================================================================
-
-log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*" >> "$INSTALL_LOG"
-}
-
-log_error() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: $*" >> "$INSTALL_LOG"
-}
-
-# =============================================================================
-# UTILITY FUNCTIONS
-# =============================================================================
-
-print_header() {
-    echo ""
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${CYAN}     _    _                 _      ${NC}"
-    echo -e "${CYAN}    / \\  | | ___  ___  __ _(_)     ${NC}"
-    echo -e "${CYAN}   / _ \\ | |/ _ \\/ __|/ _\` | |     ${NC}"
-    echo -e "${CYAN}  / ___ \\| |  __/\\__ \\ (_| | |     ${NC}"
-    echo -e "${CYAN} /_/   \\_\\_|\\___||___/\\__, |_|     ${NC}"
-    echo -e "${CYAN}                         |_|       ${NC}"
-    echo -e "${CYAN}${BOLD}   Intelligence Distribution${NC}"
-    echo -e "${BLUE}========================================${NC}"
-    echo ""
-}
-
-print_section() {
-    echo ""
-    echo -e "${BLUE}▶ $1${NC}"
-    echo ""
-}
-
-print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
-
-print_error() {
-    echo -e "${RED}❌ $1${NC}"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-
-print_info() {
-    echo -e "${CYAN}ℹ️  $1${NC}"
-}
 
 # =============================================================================
 # SIGNAL HANDLING
