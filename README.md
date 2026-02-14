@@ -494,6 +494,39 @@ docker-compose ps
 - **Atlas:** Check IP is whitelisted in Atlas Network Access
 - Verify connection string format and credentials
 
+**Users exist in Atlas but application says "no users found":**
+
+**Cause:** Database name mismatch between URI and MONGODB_DATABASE variable.
+
+**Solution:**
+1. Check your `.env` file:
+   ```bash
+   grep MONGODB atlas/.env
+   ```
+
+2. Remove `MONGODB_DATABASE` if present:
+   ```bash
+   nano atlas/.env
+   # Delete or comment out: MONGODB_DATABASE=...
+   ```
+
+3. Verify the database name in your URI:
+   ```
+   mongodb+srv://user:pass@cluster.net/YOUR_DATABASE_NAME?...
+                                       ^^^^^^^^^^^^^^^^^^
+   ```
+
+4. Recreate containers:
+   ```bash
+   docker compose down
+   docker compose up -d --force-recreate
+   ```
+
+5. Check which database it's connecting to:
+   ```bash
+   docker logs alesqui-backend | grep -iE 'mongo|database'
+   ```
+
 **For more detailed troubleshooting:** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ---

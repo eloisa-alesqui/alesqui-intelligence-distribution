@@ -469,7 +469,22 @@ configure_environment() {
             print_error "Invalid URI. Must start with mongodb+srv://"
             read -p "Enter MongoDB Atlas URI: " mongodb_uri </dev/tty
         done
-        log "MongoDB Atlas URI configured"
+        
+        # Extract database name from URI for user confirmation
+        extracted_db=""
+        if [[ $mongodb_uri =~ \.net/([^?]+) ]] && [[ -n "${BASH_REMATCH[1]}" ]]; then
+            extracted_db="${BASH_REMATCH[1]}"
+            print_info "Database name from URI: $extracted_db"
+            echo "The application will connect to the '$extracted_db' database."
+            echo ""
+        else
+            print_warning "Could not extract database name from URI."
+            echo "Make sure your URI includes the database name after .mongodb.net/"
+            echo "Example: mongodb+srv://user:pass@cluster.net/DATABASE_NAME?options"
+            echo ""
+        fi
+        
+        log "MongoDB Atlas URI configured (database: ${extracted_db:-unknown})"
     else
         echo ""
         print_info "MongoDB Configuration (Local):"

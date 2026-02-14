@@ -81,11 +81,13 @@ For production deployments using MongoDB Atlas:
 
 ```bash
 # MongoDB Atlas connection string
-# Format: mongodb+srv://username:password@cluster.mongodb.net/dbname?retryWrites=true&w=majority
+# The database name MUST be specified in the URI
 MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/alesqui_intelligence?retryWrites=true&w=majority
+#                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+#                                                                      This is your database name
 
-# Database name (should match the database in your connection string)
-MONGODB_DATABASE=alesqui_intelligence
+# ⚠️ DO NOT set MONGODB_DATABASE for Atlas deployment
+# The database name comes from the URI only
 ```
 
 **Important Notes for Atlas:**
@@ -105,6 +107,17 @@ MONGODB_DATABASE=alesqui_intelligence
 4. Select "Driver: Java" and "Version: 4.3 or later"
 5. Copy the connection string and replace `<password>` with your actual password
 6. Add your database name before the `?`: `.../alesqui_intelligence?retryWrites=...`
+
+**Common Issues:**
+
+1. **Wrong database name:** If you see users in Atlas but the application says "no users found":
+   - Check which database name is in your `MONGODB_ATLAS_URI`
+   - Make sure you're looking at the same database in Atlas dashboard
+   - The database name is case-sensitive
+
+2. **Conflicting configuration:** If your `.env` contains both `MONGODB_ATLAS_URI` and `MONGODB_DATABASE`:
+   - Remove `MONGODB_DATABASE` from your `.env` file
+   - Restart: `docker compose down && docker compose up -d --force-recreate`
 
 #### Option B: Local MongoDB (Self-Hosted)
 
@@ -289,7 +302,6 @@ JWT_REFRESH_EXPIRATION=604800000
 # DATABASE - MONGODB ATLAS
 # =============================================================================
 MONGODB_ATLAS_URI=mongodb+srv://alesqui_admin:MyP%40ss%23123@cluster0.abc123.mongodb.net/alesqui_intelligence?retryWrites=true&w=majority
-MONGODB_DATABASE=alesqui_intelligence
 
 # =============================================================================
 # AI CONFIGURATION
