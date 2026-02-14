@@ -471,6 +471,7 @@ configure_environment() {
         done
         
         # Extract database name from URI for user confirmation
+        extracted_db=""
         if [[ $mongodb_uri =~ \.net/([^?]+) ]]; then
             extracted_db="${BASH_REMATCH[1]}"
             print_info "Database name from URI: $extracted_db"

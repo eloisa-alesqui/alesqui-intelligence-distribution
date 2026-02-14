@@ -501,7 +501,7 @@ docker-compose ps
 **Solution:**
 1. Check your `.env` file:
    ```bash
-   cat atlas/.env | grep MONGODB
+   grep MONGODB atlas/.env
    ```
 
 2. Remove `MONGODB_DATABASE` if present:
