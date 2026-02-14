@@ -187,17 +187,18 @@ docker-compose --profile local-db up -d
    - Choose "Connect your application"
    - Copy the connection string
    - Replace `<password>` with your database user password
-   - Replace `<database>` with `alesqui_intelligence`
+   - Replace `<database>` with your database name (e.g., `alesqui_intelligence`)
+   
+   **⚠️ IMPORTANT:** The database name in the URI is what the application will use.
+   Make sure it matches your desired database name.
 
 5. **Update `.env` file:**
    ```bash
-   # Comment out local MongoDB variables
-   # MONGODB_ROOT_USER=admin
-   # MONGODB_ROOT_PASSWORD=...
-   # MONGODB_DATABASE=alesqui_intelligence
-   
    # Use Atlas connection string
-   MONGODB_URI=mongodb+srv://alesqui:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/alesqui_intelligence?retryWrites=true&w=majority
+   # The database name is specified in the URI (alesqui_intelligence in this example)
+   MONGODB_ATLAS_URI=mongodb+srv://alesqui:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/alesqui_intelligence?retryWrites=true&w=majority
+   
+   # DO NOT set MONGODB_DATABASE for Atlas - it's not needed
    ```
 
 6. **Start command:**

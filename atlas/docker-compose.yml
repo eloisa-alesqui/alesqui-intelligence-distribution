@@ -14,7 +14,6 @@ services:
       
       # MongoDB Atlas Configuration
       MONGODB_URI: ${MONGODB_ATLAS_URI}
-      MONGODB_DATABASE: ${MONGODB_DATABASE:-alesqui_intelligence}
       MONGODB_AUTO_INDEX: true
       
       # Security & JWT
