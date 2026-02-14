@@ -656,7 +656,7 @@ AUDIT_RETENTION_DAYS=730
 # =============================================================================
 # ADMIN
 # =============================================================================
-ADMIN_EMAIL=$admin_email
+INITIAL_ADMIN_EMAIL=$admin_email
 EOF
 
     # Normalize line endings (remove CRLF on Windows)
@@ -803,9 +803,13 @@ EOF
     
     echo "Next steps:"
     echo "  1. Visit $frontend_url to access the application"
-    echo "  2. The system will create the initial admin account"
-    echo "  3. Check your email ($admin_email) for the activation link"
-    echo "  4. Activate your account and start using Alesqui Intelligence!"
+    echo "  2. The initial admin account has been created automatically"
+    echo "  3. To get the auto-generated password, check the backend logs:"
+    echo "     cd $DEPLOYMENT_DIR && docker compose logs backend | grep 'Password:'"
+    echo "  4. Login with:"
+    echo "     • Email: $admin_email"
+    echo "     • Password: (from logs above)"
+    echo "  5. ⚠️  IMPORTANT: Change the password immediately after first login!"
     echo ""
     echo "Documentation:"
     echo "  https://github.com/eloisa-alesqui/alesqui-intelligence-distribution"
