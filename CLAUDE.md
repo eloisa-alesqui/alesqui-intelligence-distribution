@@ -1,68 +1,68 @@
-# Distribution — Guía para Claude
+# Distribution — Guide for Claude
 
-## Propósito
+## Purpose
 
-Paquete de distribución Docker listo para producción. Permite desplegar la plataforma completa (backend + frontend + MongoDB) con un solo script de instalación, abstrayendo toda la complejidad de Docker para usuarios sin experiencia técnica profunda.
+Production-ready Docker distribution package. Deploys the full platform (backend + frontend + MongoDB) with a single installation script, abstracting all Docker complexity for users without deep technical expertise.
 
 ---
 
-## Stack / Herramientas
+## Stack / Tools
 
-| Componente | Tecnología |
+| Component | Technology |
 |-----------|-----------|
-| Orquestación | Docker Compose 2.0+ |
-| Automatización | Bash scripts |
-| CI/CD | GitHub Actions (empaquetado y release) |
-| Imágenes Docker | `alesquiintelligence/backend:latest`, `alesquiintelligence/frontend:latest` |
-| Base de datos | MongoDB 7.0 (container local) o MongoDB Atlas (cloud) |
-| Plataformas | Linux, macOS, Windows (WSL) |
+| Orchestration | Docker Compose 2.0+ |
+| Automation | Bash scripts |
+| CI/CD | GitHub Actions (packaging and release) |
+| Docker images | `alesquiintelligence/backend:latest`, `alesquiintelligence/frontend:latest` |
+| Database | MongoDB 7.0 (local container) or MongoDB Atlas (cloud) |
+| Platforms | Linux, macOS, Windows (WSL) |
 
-**No es un proyecto Node.js ni Java.** No tiene `package.json` ni `pom.xml`.
+**This is not a Node.js or Java project.** It has no `package.json` or `pom.xml`.
 
 ---
 
-## Estructura de Directorios
+## Directory Structure
 
 ```
 alesqui-intelligence-distribution/
-├── local/                          # Despliegue con MongoDB local
-│   ├── docker-compose.yml          # Incluye servicio mongo:7.0.15
-│   ├── .env.example                # Template de variables de entorno
+├── local/                          # Local MongoDB deployment
+│   ├── docker-compose.yml          # Includes mongo:7.0.15 service
+│   ├── .env.example                # Environment variable template
 │   └── README.md
-├── atlas/                          # Despliegue con MongoDB Atlas (cloud)
-│   ├── docker-compose.yml          # Sin servicio MongoDB
-│   ├── .env.example                # Template con MONGODB_ATLAS_URI
+├── atlas/                          # MongoDB Atlas (cloud) deployment
+│   ├── docker-compose.yml          # No MongoDB service
+│   ├── .env.example                # Template with MONGODB_ATLAS_URI
 │   └── README.md
 ├── scripts/
-│   ├── install.sh                  # Instalador principal (wizard interactivo)
-│   ├── manage.sh                   # Gestión post-instalación (root)
-│   ├── quick-install.sh            # Instalación rápida
-│   ├── test-install.sh             # Test de instalación
-│   ├── backup.sh                   # Backup de MongoDB
-│   ├── generate-secrets.sh         # Generación de secretos JWT
-│   ├── health-check.sh             # Verificación de salud de servicios
-│   ├── package.sh                  # Empaquetado manual de release
-│   ├── start-local.sh              # Arranque local
-│   ├── start-atlas.sh              # Arranque Atlas
-│   ├── stop.sh                     # Parada de servicios
-│   ├── update.sh                   # Actualización de imágenes Docker
-│   └── uninstall.sh                # Desinstalación completa
+│   ├── install.sh                  # Main installer (interactive wizard)
+│   ├── manage.sh                   # Post-install management (root)
+│   ├── quick-install.sh            # Quick installation
+│   ├── test-install.sh             # Installation test
+│   ├── backup.sh                   # MongoDB backup
+│   ├── generate-secrets.sh         # JWT secret generation
+│   ├── health-check.sh             # Service health verification
+│   ├── package.sh                  # Manual release packaging
+│   ├── start-local.sh              # Start local deployment
+│   ├── start-atlas.sh              # Start Atlas deployment
+│   ├── stop.sh                     # Stop services
+│   ├── update.sh                   # Update Docker images
+│   └── uninstall.sh                # Complete uninstall
 ├── .github/workflows/
-│   └── release.yml                 # GitHub Actions: empaqueta y publica release
-├── .env.example                    # Template genérico raíz
-├── README.md                       # Guía principal
-├── CONFIGURATION.md                # Referencia completa de configuración
-├── INSTALLATION.md                 # Instalación paso a paso manual
-├── INSTALLATION_SCRIPTS.md         # Documentación de scripts
-├── TROUBLESHOOTING.md              # Problemas comunes y soluciones
-└── RELEASING.md                    # Proceso de release
+│   └── release.yml                 # GitHub Actions: package and publish release
+├── .env.example                    # Generic root template
+├── README.md                       # Main guide
+├── CONFIGURATION.md                # Full configuration reference
+├── INSTALLATION.md                 # Manual step-by-step installation
+├── INSTALLATION_SCRIPTS.md         # Script documentation
+├── TROUBLESHOOTING.md              # Common issues and solutions
+└── RELEASING.md                    # Release process
 ```
 
 ---
 
-## Modos de Despliegue
+## Deployment Modes
 
-### Local (MongoDB en Docker)
+### Local (MongoDB in Docker)
 ```yaml
 # local/docker-compose.yml
 services:
@@ -78,11 +78,11 @@ volumes:
   mongodb_config:
 ```
 
-### Atlas (MongoDB en la nube)
+### Atlas (MongoDB in the cloud)
 ```yaml
 # atlas/docker-compose.yml
 services:
-  backend:    # Sin servicio mongodb
+  backend:    # No mongodb service
   frontend:
 
 networks:
@@ -91,33 +91,33 @@ networks:
 
 ---
 
-## Variables de Entorno
+## Environment Variables
 
-### Seguridad (críticas)
+### Security (critical)
 ```bash
-JWT_SECRET=<mínimo 32 caracteres aleatorios>
-JWT_EXPIRATION=900000          # 15 minutos en ms
-JWT_REFRESH_EXPIRATION=604800000  # 7 días en ms
+JWT_SECRET=<minimum 32 random characters>
+JWT_EXPIRATION=900000          # 15 minutes in ms
+JWT_REFRESH_EXPIRATION=604800000  # 7 days in ms
 ```
 
-### Base de datos
+### Database
 ```bash
-# Modo local
+# Local mode
 MONGODB_URI=mongodb://admin:password@mongodb:27017/alesqui_intelligence?authSource=admin
 MONGODB_USERNAME=admin
 MONGODB_PASSWORD=<password>
 MONGODB_DATABASE=alesqui_intelligence
 
-# Modo Atlas
+# Atlas mode
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/dbname?retryWrites=true&w=majority
 ```
 
-### IA y aplicación
+### AI and application
 ```bash
 OPENAI_API_KEY=sk-proj-...
-DEPLOYMENT_MODE=CORPORATE       # o TRIAL
-COMPANY_NAME=Mi Empresa
-FRONTEND_URL=http://localhost   # Para CORS
+DEPLOYMENT_MODE=CORPORATE       # or TRIAL
+COMPANY_NAME=My Company
+FRONTEND_URL=http://localhost   # For CORS
 ```
 
 ### Email (SMTP)
@@ -126,17 +126,17 @@ SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
 SMTP_USER=apikey
 SMTP_PASSWORD=...
-MAIL_FROM_EMAIL=noreply@empresa.com
+MAIL_FROM_EMAIL=noreply@company.com
 MAIL_FROM_NAME=Alesqui Intelligence
 ```
 
-### Admin inicial
+### Initial admin
 ```bash
-INITIAL_ADMIN_EMAIL=admin@empresa.com
-INITIAL_ADMIN_PASSWORD=  # Si vacío, se genera automáticamente
+INITIAL_ADMIN_EMAIL=admin@company.com
+INITIAL_ADMIN_PASSWORD=  # If empty, auto-generated
 ```
 
-### Retención y Docker
+### Retention and Docker
 ```bash
 AUDIT_RETENTION_DAYS=730
 TRIAL_DURATION_DAYS=14
@@ -148,71 +148,71 @@ FRONTEND_VERSION=latest
 
 ---
 
-## Scripts Principales
+## Main Scripts
 
-### Instalación
+### Installation
 
 ```bash
-# Método 1: instalador interactivo
+# Method 1: interactive installer
 ./scripts/install.sh
-# → Asistente paso a paso: elige local/atlas, configura .env, arranca servicios
+# → Step-by-step wizard: choose local/atlas, configure .env, start services
 
-# Método 2: curl pipe (instalación remota)
+# Method 2: curl pipe (remote installation)
 curl -fsSL https://releases.../install.sh | bash
 
-# Método 3: arranque directo
-./scripts/start-local.sh    # MongoDB local
+# Method 3: direct start
+./scripts/start-local.sh    # Local MongoDB
 ./scripts/start-atlas.sh    # MongoDB Atlas
 ```
 
-### Gestión post-instalación (manage.sh)
+### Post-install management (manage.sh)
 
 ```bash
-./manage.sh start     # Arrancar servicios
-./manage.sh stop      # Parar servicios
-./manage.sh restart   # Reiniciar
-./manage.sh status    # Ver estado de containers
-./manage.sh logs      # Ver logs en tiempo real
-./manage.sh backup    # Hacer backup de MongoDB
-./manage.sh update    # Actualizar a nuevas imágenes Docker
+./manage.sh start     # Start services
+./manage.sh stop      # Stop services
+./manage.sh restart   # Restart
+./manage.sh status    # View container status
+./manage.sh logs      # View real-time logs
+./manage.sh backup    # Back up MongoDB
+./manage.sh update    # Update to new Docker images
 ```
 
-El script `manage.sh` lee `.install-info` para saber si fue instalado como local o atlas.
+`manage.sh` reads `.install-info` to know whether it was installed as local or atlas.
 
 ---
 
 ## Health Checks (docker-compose)
 
-| Servicio | Health Check | Intervalo | Inicio |
-|---------|-------------|---------|--------|
+| Service | Health Check | Interval | Start period |
+|---------|-------------|----------|--------------|
 | MongoDB | `mongosh --eval "db.adminCommand('ping')"` | 10s | - |
 | Backend | `curl /actuator/health` | 30s | 60s |
 | Frontend | `curl /health` | 30s | - |
 
-Dependencias: frontend → backend → mongodb
+Dependencies: frontend → backend → mongodb
 
 ---
 
-## Proceso de Release
+## Release Process
 
-### Automático (GitHub Actions)
+### Automatic (GitHub Actions)
 ```bash
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
-# → GitHub Actions empaqueta y crea GitHub Release automáticamente
+# → GitHub Actions packages and creates GitHub Release automatically
 ```
 
-### Manual (emergencias)
+### Manual (emergencies)
 ```bash
 ./scripts/package.sh v1.0.0
 ```
 
-### Artefactos de Release
-- `alesqui-intelligence-v1.0.0.tar.gz` — paquete versionado
+### Release Artifacts
+- `alesqui-intelligence-v1.0.0.tar.gz` — versioned package
 - `alesqui-intelligence.tar.gz` — latest
-- `checksums.txt` — SHA256 para verificación
+- `checksums.txt` — SHA256 for verification
 
-### Contenido del paquete (excluye .git, .env, node_modules)
+### Package contents (excludes .git, .env, node_modules)
 ```
 atlas/
 local/
@@ -226,38 +226,38 @@ CONFIGURATION.md
 
 ---
 
-## Networking Docker
+## Docker Networking
 
 ```
-Puerto 80   → frontend (Nginx)
-Puerto 8080 → backend (Spring Boot) — solo interno en producción
-Puerto 27017 → MongoDB — SOLO modo local, no exponer en producción
+Port 80   → frontend (Nginx)
+Port 8080 → backend (Spring Boot) — internal only in production
+Port 27017 → MongoDB — local mode ONLY, do not expose in production
 ```
 
-Red interna: `alesqui-network` (bridge). Los servicios se comunican por nombre DNS:
+Internal network: `alesqui-network` (bridge). Services communicate by DNS name:
 - Frontend → `http://backend:8080`
 - Backend → `mongodb://mongodb:27017`
 
 ---
 
-## Convenciones
+## Conventions
 
-- **Un `.env` por modo**: usar `local/.env` o `atlas/.env`, nunca el `.env.example` raíz directamente.
-- **Nunca commitear `.env`**: el `.gitignore` los excluye. Solo commitear `.env.example`.
-- **Secretos**: usar `generate-secrets.sh` para generar `JWT_SECRET` seguro.
-- **Versionado de imágenes**: en producción usar tags explícitos (`v1.0.0`) en lugar de `latest`.
-- **Documentación**: toda la documentación del usuario final va en los `.md` de la raíz, no en scripts.
-- **Scripts POSIX**: los scripts bash deben ser compatibles con Linux, macOS y Windows WSL.
+- **One `.env` per mode**: use `local/.env` or `atlas/.env`, never the root `.env.example` directly.
+- **Never commit `.env`**: `.gitignore` excludes them. Only commit `.env.example`.
+- **Secrets**: use `generate-secrets.sh` to generate a secure `JWT_SECRET`.
+- **Image versioning**: in production use explicit tags (`v1.0.0`) instead of `latest`.
+- **Documentation**: all end-user documentation goes in the root `.md` files, not inside scripts.
+- **POSIX scripts**: bash scripts must be compatible with Linux, macOS, and Windows WSL.
 
 ---
 
-## Archivos de Documentación
+## Documentation Files
 
-| Archivo | Audiencia | Contenido |
-|---------|----------|-----------|
-| `README.md` | Todos | Quick start, comparativa local vs atlas, comandos comunes |
-| `CONFIGURATION.md` | Admins | Referencia completa de variables, SMTP providers, audit |
-| `INSTALLATION.md` | Técnicos | Instalación manual paso a paso |
-| `INSTALLATION_SCRIPTS.md` | Técnicos | Documentación de cada script |
-| `TROUBLESHOOTING.md` | Soporte | Problemas comunes y diagnóstico |
-| `RELEASING.md` | Mantenedores | Proceso de release y versionado semántico |
+| File | Audience | Content |
+|------|----------|---------|
+| `README.md` | Everyone | Quick start, local vs atlas comparison, common commands |
+| `CONFIGURATION.md` | Admins | Full variable reference, SMTP providers, audit |
+| `INSTALLATION.md` | Technical | Manual step-by-step installation |
+| `INSTALLATION_SCRIPTS.md` | Technical | Documentation for each script |
+| `TROUBLESHOOTING.md` | Support | Common issues and diagnostics |
+| `RELEASING.md` | Maintainers | Release process and semantic versioning |
